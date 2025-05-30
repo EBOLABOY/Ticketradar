@@ -1,0 +1,16 @@
+{
+  "name": "Ticketradar",
+  "short_name": "Ticketradar",
+  "description": "实时监控低价机票，助您找到最佳出行选择",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#0d6efd",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
