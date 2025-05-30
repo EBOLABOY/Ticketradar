@@ -56,8 +56,8 @@ payload = {
       "dow": [],
       "dcs": [ { "ct": 1, "code": "HKG" } ],
       "acs": [ { "ct": 6, "code": "bd_49_29" } ], # bd_49_29 可能代表特定区域或预算范围
-      "drl": [ { "begin": "2025-05-30", "end": "2025-05-30" } ],
-      "rdrl": [ { "begin": "2025-06-02", "end": "2025-06-02" } ]
+      "drl": [ { "begin": "2025-09-30", "end": "2025-09-30" } ],
+      "rdrl": [ { "begin": "2025-10-08", "end": "2025-10-08" } ]
     }
   ],
   "filters": [ { "type": 18, "code": "1,0,0" } ],
@@ -740,8 +740,8 @@ app_settings = {
     'departure_city': '香港',
     'departure_code': 'HKG',
     'trip_type': '往返',
-    'depart_date': '2025-05-30',
-    'return_date': '2025-06-02'
+    'depart_date': '2025-09-30',
+    'return_date': '2025-10-08'
 }
 app_stats = {
     'HKG': {'total': 0, 'low_price': 0, 'min_price': 0},
@@ -853,6 +853,18 @@ def update_payload_for_departure(departure_code):
         if 'dcs' in updated_payload['segments'][0] and len(updated_payload['segments'][0]['dcs']) > 0:
             updated_payload['segments'][0]['dcs'][0]['code'] = departure_code
 
+    # 更新日期信息，使用app_settings中的日期（已从环境变量读取）
+    if 'segments' in updated_payload and len(updated_payload['segments']) > 0:
+        # 更新出发日期
+        if 'drl' in updated_payload['segments'][0] and len(updated_payload['segments'][0]['drl']) > 0:
+            updated_payload['segments'][0]['drl'][0]['begin'] = app_settings['depart_date']
+            updated_payload['segments'][0]['drl'][0]['end'] = app_settings['depart_date']
+
+        # 更新返程日期
+        if 'rdrl' in updated_payload['segments'][0] and len(updated_payload['segments'][0]['rdrl']) > 0:
+            updated_payload['segments'][0]['rdrl'][0]['begin'] = app_settings['return_date']
+            updated_payload['segments'][0]['rdrl'][0]['end'] = app_settings['return_date']
+
     # 更新transactionId，使用当前时间戳
     current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     transaction_id = f"1-mf-{current_time}-WEB"
@@ -893,16 +905,8 @@ def extract_trip_info_from_payload(current_payload=None):
             if trip_type_code is not None:
                 app_settings['trip_type'] = '往返' if trip_type_code == 2 else '单程'
 
-        # 提取日期（如果payload中有更新的信息）
-        if 'segments' in current_payload and len(current_payload['segments']) > 0:
-            if 'drl' in current_payload['segments'][0] and len(current_payload['segments'][0]['drl']) > 0:
-                depart_date = current_payload['segments'][0]['drl'][0].get('begin')
-                if depart_date:
-                    app_settings['depart_date'] = depart_date
-            if 'rdrl' in current_payload['segments'][0] and len(current_payload['segments'][0]['rdrl']) > 0:
-                return_date = current_payload['segments'][0]['rdrl'][0].get('begin')
-                if return_date:
-                    app_settings['return_date'] = return_date
+        # 注意：不再从payload中提取日期信息，因为日期应该由环境变量控制
+        # 这样可以确保.env文件中的日期配置生效
     except Exception as e:
         print(f"提取行程信息出错: {e}")
 
@@ -1036,8 +1040,8 @@ if __name__ == "__main__":
     trip_type_code = int(os.getenv("TRIP_TYPE", "2"))
     app_settings['trip_type'] = '往返' if trip_type_code == 2 else '单程'
 
-    app_settings['depart_date'] = os.getenv("DEPART_DATE", "2025-05-30")
-    app_settings['return_date'] = os.getenv("RETURN_DATE", "2025-06-02")
+    app_settings['depart_date'] = os.getenv("DEPART_DATE", "2025-09-30")
+    app_settings['return_date'] = os.getenv("RETURN_DATE", "2025-10-08")
 
     print(f"默认始发地设置为: {app_settings['departure_city']} ({current_departure})")
 
