@@ -5,7 +5,7 @@
 ## 功能特点
 
 - 每5分钟自动检测一次机票价格
-- 支持香港、广州、深圳三个始发地同时监控
+- 支持香港、广州、深圳、澳门四个始发地同时监控
 - 筛选价格低于设定阈值的境外目的地
 - 通过PushPlus推送低价机票通知，支持按始发地分组推送
 - 避免重复推送同一目的地（除非价格更低或24小时后）
@@ -36,6 +36,7 @@ PUSHPLUS_TOKEN=你的PushPlus令牌
 PUSHPLUS_TOPIC_HKG=1
 PUSHPLUS_TOPIC_CAN=2
 PUSHPLUS_TOPIC_SZX=3
+PUSHPLUS_TOPIC_MFM=4
 # 请确保在PushPlus平台上已创建对应的群组
 
 # 价格阈值设置（低于此价格的目的地会被推送）
@@ -45,7 +46,7 @@ PRICE_THRESHOLD=1000
 CHECK_INTERVAL=5
 
 # 默认始发地设置（系统启动时首先显示的始发地）
-# 可选值: HKG(香港), CAN(广州), SZX(深圳)
+# 可选值: HKG(香港), CAN(广州), SZX(深圳), MFM(澳门)
 DEFAULT_DEPARTURE=HKG
 
 # 行程类型（1=单程，2=往返）
@@ -122,6 +123,7 @@ chmod +x start_monitor.sh stop_monitor.sh
    - 香港始发地的通知会推送到`PUSHPLUS_TOPIC_HKG`指定的群组
    - 广州始发地的通知会推送到`PUSHPLUS_TOPIC_CAN`指定的群组
    - 深圳始发地的通知会推送到`PUSHPLUS_TOPIC_SZX`指定的群组
+   - 澳门始发地的通知会推送到`PUSHPLUS_TOPIC_MFM`指定的群组
    - 如果某个始发地的群组编码设置为空，则使用个人推送
    - 请确保在PushPlus平台上已创建对应的群组
    - 可以通过设置`ENABLE_PUSHPLUS=false`来完全禁用推送功能

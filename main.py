@@ -713,7 +713,7 @@ def main(departure_code=None):
 app = Flask(__name__)
 last_update_time = None
 flights_data = []  # 当前选中始发地的航班数据
-all_flights_data = {}  # 存储所有始发地的航班数据，格式: {'HKG': [...], 'CAN': [...], 'SZX': [...]}
+all_flights_data = {}  # 存储所有始发地的航班数据，格式: {'HKG': [...], 'CAN': [...], 'SZX': [...], 'MFM': [...]}
 current_departure = None  # 当前选中的始发地，将在程序启动时从环境变量中读取
 first_run_completed = False  # 标记第一次运行是否完成
 
@@ -721,14 +721,16 @@ first_run_completed = False  # 标记第一次运行是否完成
 departure_cities = {
     'HKG': '香港',
     'CAN': '广州',
-    'SZX': '深圳'
+    'SZX': '深圳',
+    'MFM': '澳门'
 }
 
 # 始发地对应的PushPlus群组编码变量名映射
 pushplus_topic_env_vars = {
     'HKG': 'PUSHPLUS_TOPIC_HKG',  # 香港始发地对应的环境变量
     'CAN': 'PUSHPLUS_TOPIC_CAN',  # 广州始发地对应的环境变量
-    'SZX': 'PUSHPLUS_TOPIC_SZX'   # 深圳始发地对应的环境变量
+    'SZX': 'PUSHPLUS_TOPIC_SZX',  # 深圳始发地对应的环境变量
+    'MFM': 'PUSHPLUS_TOPIC_MFM'   # 澳门始发地对应的环境变量
 }
 
 app_settings = {
@@ -744,7 +746,8 @@ app_settings = {
 app_stats = {
     'HKG': {'total': 0, 'low_price': 0, 'min_price': 0},
     'CAN': {'total': 0, 'low_price': 0, 'min_price': 0},
-    'SZX': {'total': 0, 'low_price': 0, 'min_price': 0}
+    'SZX': {'total': 0, 'low_price': 0, 'min_price': 0},
+    'MFM': {'total': 0, 'low_price': 0, 'min_price': 0}
 }
 
 # ---- Web路由 ----
@@ -777,7 +780,8 @@ def index(departure_code=None):
     qr_codes = {
         'HKG': 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=gQEe8DwAAAAAAAAAAS5odHRwOi8vd2VpeGluLnFxLmNvbS9xLzAya1BHWEVwMDVjWEQxcEtFNU5FY3kAAgRuGx5oAwQAjScA',
         'CAN': 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=gQF48DwAAAAAAAAAAS5odHRwOi8vd2VpeGluLnFxLmNvbS9xLzAyTnhYTUYtMDVjWEQxcGlFNU5FY04AAgRSGx5oAwQAjScA',
-        'SZX': 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=gQGe8DwAAAAAAAAAAS5odHRwOi8vd2VpeGluLnFxLmNvbS9xLzAyUzlJVkZqMDVjWEQxbFBHNmhFY0gAAgRz3R5oAwQAjScA'
+        'SZX': 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=gQGe8DwAAAAAAAAAAS5odHRwOi8vd2VpeGluLnFxLmNvbS9xLzAyUzlJVkZqMDVjWEQxbFBHNmhFY0gAAgRz3R5oAwQAjScA',
+        'MFM': 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=gQHK8TwAAAAAAAAAAS5odHRwOi8vd2VpeGluLnFxLmNvbS9xLzAyNjQzLUZDMDVjWEQxaVNqeGhFYzgAAgS2hjloAwQAjScA'
     }
 
     return render_template('index.html',
