@@ -1,0 +1,45 @@
+{
+  "mode": 0,
+  "searchCriteria": {
+    "grade": 3,
+    "tripType": 1,
+    "journeyNo": 1,
+    "passengerInfoType": {
+      "adultCount": 1,
+      "childCount": 0,
+      "infantCount": 0
+    },
+    "journeyInfoTypes": [
+      {
+        "journeyNo": 1,
+        "departDate": "2025-06-30",
+        "departCode": "SHA",
+        "arriveCode": "SEL",
+        "departAirport": "",
+        "arriveAirport": ""
+      }
+    ],
+    "policyId": null
+  },
+  "sortInfoType": {
+    "direction": true,
+    "orderBy": "Direct",
+    "topList": []
+  },
+  "tagList": [],
+  "flagList": [],
+  "filterType": {
+    "filterFlagTypes": [
+      {
+        "flag": "Direct",
+        "allow": true,
+        "journeyNoList": [
+          1
+        ],
+        "memory": true
+      }
+    ],
+    "queryItemSettings": [],
+    "studentsSelectedStatus": true
+  }
+}

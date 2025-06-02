@@ -1,3 +1,85 @@
+/* 顶部导航栏样式 */
+.navbar {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 0.25rem 0; /* 进一步减少导航栏上下内边距 */
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+}
+
+.navbar-brand {
+    font-size: 1.3rem; /* 减小导航栏品牌字体大小 */
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+.navbar-brand:hover {
+    text-decoration: none;
+    transform: scale(1.05);
+}
+
+.navbar .btn {
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border-width: 1.5px;
+}
+
+.navbar .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.navbar .btn-outline-primary {
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+.navbar .btn-outline-primary:hover {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.navbar .btn-primary {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.navbar .btn-primary:hover {
+    background-color: #0b5ed7;
+    border-color: #0a58ca;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 0.5rem 0;
+    margin-top: 0.5rem;
+}
+
+.dropdown-item {
+    padding: 0.75rem 1.5rem;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.dropdown-item.text-danger:hover {
+    background-color: #f8d7da;
+    color: #721c24 !important;
+}
+
 body {
     background-color: #f8f9fa;
     font-family: 'Noto Sans SC', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -11,23 +93,45 @@ body {
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 30px 20px; /* 增加顶部内边距 */
+    padding: 5px 20px; /* 再次减少顶部内边距 */
 }
 
 header {
-    margin-bottom: 30px;
+    margin-bottom: 10px; /* 进一步减少header底部边距 */
 }
 
-header .display-4 {
-    font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 0.5rem;
+/* 主标题区域样式 */
+.hero-section {
+    padding: 0.5rem 0; /* 大幅减少主标题区域的内边距 */
+    margin-bottom: 0.5rem; /* 大幅减少主标题区域的底部边距 */
 }
 
-header .lead {
+.hero-section h1 {
+    font-weight: 800;
+    color: #0d6efd;
+    margin-bottom: 0.5rem; /* 减少标题底部边距 */
+    text-shadow: 0 2px 4px rgba(13, 110, 253, 0.1);
+    letter-spacing: -0.02em;
+}
+
+.hero-section h1 i {
+    color: #0d6efd;
+    transform: rotate(-10deg);
+    display: inline-block;
+    transition: transform 0.3s ease;
+}
+
+.hero-section h1:hover i {
+    transform: rotate(0deg) scale(1.1);
+}
+
+.hero-section .lead {
     color: #6c757d;
-    font-size: 1.1rem;
-    margin-bottom: 1.5rem;
+    font-weight: 400;
+    margin-bottom: 0;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* 行程信息卡片样式 */
@@ -35,12 +139,12 @@ header .lead {
     background-color: #fff;
     border-radius: 12px; /* 更大的圆角 */
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08); /* 更柔和自然的阴影 */
-    padding: 20px 25px;
-    margin: 25px auto;
+    padding: 12px 18px; /* 进一步减少内边距 */
+    margin: 8px auto; /* 进一步减少外边距 */
     max-width: 600px;
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 12px; /* 进一步减少内部间距 */
     border: 1px solid rgba(0, 0, 0, 0.03); /* 微妙的边框 */
 }
 
@@ -174,12 +278,12 @@ header .lead {
 
 .last-update {
     color: #6c757d;
-    font-size: 0.9rem;
-    margin-top: 15px;
+    font-size: 0.85rem; /* 稍微减小字体 */
+    margin-top: 8px; /* 减少顶部边距 */
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 6px; /* 减少间距 */
 }
 
 .last-update i {
@@ -313,7 +417,7 @@ header .lead {
 }
 
 .setting-label i {
-    color: #198754;
+    color: #0d6efd;
     font-size: 1.1rem;
 }
 
@@ -341,10 +445,10 @@ header .lead {
     border-color: #0d6efd; /* Hover时边框变色 */
 }
 
-.destination-card.border-success {
+.destination-card.border-primary {
     border-width: 2px;
-    border-color: #28a745 !important; /* 确保覆盖 */
-    box-shadow: 0 0 0 1px rgba(40, 167, 69, 0.25); /* 低价时外发光效果 */
+    border-color: #0d6efd !important; /* 确保覆盖 */
+    box-shadow: 0 0 0 1px rgba(13, 110, 253, 0.25); /* 低价时外发光效果 */
 }
 
 .destination-image-container {
@@ -386,7 +490,7 @@ header .lead {
 }
 
 .price-badge {
-    background-color: rgba(40, 167, 69, 0.85);
+    background-color: rgba(13, 110, 253, 0.85);
     color: white;
     padding: 4px 10px;
     border-radius: 20px;
@@ -1198,4 +1302,254 @@ footer i {
 .mobile-device {
     overflow-y: scroll;
     -webkit-overflow-scrolling: touch; /* 平滑滚动 */
+}
+
+/* 任务表单模态框样式 */
+.task-modal {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+}
+
+.task-modal-header {
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    color: white;
+    border: none;
+    padding: 1.5rem 2rem;
+    border-radius: 16px 16px 0 0;
+}
+
+.task-modal-header .modal-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+}
+
+.task-modal-header .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.task-modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.task-modal-body {
+    padding: 2rem;
+    background-color: #fafbfc;
+}
+
+.task-section {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.task-section:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #f1f3f4;
+    font-weight: 600;
+    color: #495057;
+    font-size: 1rem;
+}
+
+.section-header i {
+    color: #0d6efd;
+    font-size: 1.1rem;
+}
+
+.task-input {
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background-color: #fafbfc;
+}
+
+.task-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    background-color: white;
+    transform: translateY(-1px);
+}
+
+.form-floating > .task-input {
+    padding-top: 1.625rem;
+    padding-bottom: 0.625rem;
+}
+
+.form-floating > label {
+    padding: 1rem 1rem;
+    color: #6c757d;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.form-floating > label i {
+    color: #0d6efd;
+    margin-right: 0.5rem;
+}
+
+.city-hint {
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 8px;
+    border-left: 3px solid #0d6efd;
+    font-size: 0.85rem;
+}
+
+.city-hint span {
+    color: #495057;
+    font-weight: 500;
+}
+
+.city-examples {
+    margin-top: 0.5rem;
+    color: #6c757d;
+    font-size: 0.8rem;
+    font-family: 'Courier New', monospace;
+    background: white;
+    padding: 0.5rem;
+    border-radius: 6px;
+    border: 1px solid #dee2e6;
+}
+
+.notification-card {
+    background: linear-gradient(135deg, #f8f9fa, #ffffff);
+    border-radius: 10px;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+}
+
+.notification-info {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+.get-token-link {
+    color: #0d6efd;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    display: inline-flex;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.get-token-link:hover {
+    color: #0a58ca;
+    text-decoration: underline;
+    transform: translateX(2px);
+}
+
+.task-modal-footer {
+    background: white;
+    border: none;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.btn-create-task {
+    background: linear-gradient(135deg, #0d6efd, #0a58ca);
+    border: none;
+    border-radius: 25px;
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.btn-create-task:hover {
+    background: linear-gradient(135deg, #0a58ca, #084298);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.4);
+}
+
+.btn-light {
+    border-radius: 25px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.btn-light:hover {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+    transform: translateY(-1px);
+}
+
+/* 移动端任务表单优化 */
+@media (max-width: 768px) {
+    .task-modal-header {
+        padding: 1rem 1.5rem;
+    }
+
+    .task-modal-body {
+        padding: 1rem;
+    }
+
+    .task-section {
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .section-header {
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+    }
+
+    .city-hint {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .city-examples {
+        font-size: 0.75rem;
+        padding: 0.4rem;
+    }
+
+    .task-modal-footer {
+        padding: 1rem 1.5rem;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .btn-create-task,
+    .btn-light {
+        width: 100%;
+        padding: 0.75rem;
+    }
 }

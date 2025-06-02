@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>监控面板 - Ticketradar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=10">
+    <style>
+        /* 现代化模态框样式 */
+        .modern-modal {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+
+        .modern-modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 24px 32px;
+        }
+
+        .modal-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .modal-subtitle {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        .modern-btn-close {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            opacity: 1;
+            filter: none;
+        }
+
+        .modern-modal-body {
+            padding: 32px;
+            background: #f8f9fa;
+        }
+
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 24px;
+            overflow: hidden;
+        }
+
+        .form-card-header {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 16px 24px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .form-card-header i {
+            color: #6c757d;
+            font-size: 18px;
+        }
+
+        .form-card-body {
+            padding: 24px;
+        }
+
+        .modern-form-group {
+            margin-bottom: 24px;
+        }
+
+        .modern-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .modern-input {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 16px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+
+        .modern-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: #fff;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-suffix {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+            font-weight: 500;
+            pointer-events: none;
+        }
+
+        .form-hint {
+            color: #6c757d;
+            font-size: 12px;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .date-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .notification-features {
+            margin-top: 16px;
+            padding: 16px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 13px;
+            color: #495057;
+        }
+
+        .feature-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .get-token-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 13px;
+            margin-top: 8px;
+            transition: color 0.2s ease;
+        }
+
+        .get-token-btn:hover {
+            color: #5a6fd8;
+            text-decoration: none;
+        }
+
+        .modern-modal-footer {
+            background: white;
+            border: none;
+            padding: 24px 32px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .modern-btn {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .modern-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .date-group {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .modern-modal-body {
+                padding: 24px 20px;
+            }
+
+            .modern-modal-footer {
+                padding: 20px;
+            }
+
+            .form-card-body {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light rounded mt-3 mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{{ url_for('index') }}">
+                    <i class="bi bi-airplane text-primary"></i> Ticketradar
+                </a>
+
+                <div class="navbar-nav ms-auto">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('index') }}"><i class="bi bi-house"></i> 首页</a></li>
+                            {% if current_user.is_admin %}
+                            <li><a class="dropdown-item" href="{{ url_for('admin') }}"><i class="bi bi-gear"></i> 管理面板</a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> 退出登录</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-speedometer2 text-primary"></i> 监控面板</h2>
+            {% if not task %}
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                <i class="bi bi-plus-circle"></i> 创建监控任务
+            </button>
+            {% endif %}
+        </div>
+
+        <!-- 消息提示 -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- 监控任务显示 -->
+        {% if task %}
+            <!-- 任务详情卡片 -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card {% if task.is_active %}border-primary{% else %}border-secondary{% endif %}">
+                        <div class="card-header {% if task.is_active %}bg-primary text-white{% else %}bg-secondary text-white{% endif %}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">
+                                    <i class="bi bi-{% if task.is_active %}play-circle{% else %}pause-circle{% endif %}"></i>
+                                    {{ task.name }}
+                                </h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge {% if task.is_active %}bg-light text-primary{% else %}bg-light text-secondary{% endif %}">
+                                        {% if task.is_active %}运行中{% else %}已暂停{% endif %}
+                                    </span>
+                                    <div class="btn-group">
+                                        <button class="btn btn-sm btn-outline-light" data-task-id="{{ task.id }}" onclick="editTask(this.dataset.taskId)">
+                                            <i class="bi bi-pencil"></i> 编辑
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-light" data-task-id="{{ task.id }}" onclick="toggleTask(this.dataset.taskId)">
+                                            <i class="bi bi-{% if task.is_active %}pause{% else %}play{% endif %}"></i>
+                                            {% if task.is_active %}暂停{% else %}启动{% endif %}
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-light" data-task-id="{{ task.id }}" onclick="deleteTask(this.dataset.taskId)">
+                                            <i class="bi bi-trash"></i> 删除
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-geo-alt text-primary me-2"></i>
+                                        <div>
+                                            <small class="text-muted">路线</small>
+                                            <div><strong>{{ task.departure_city }}</strong> → <strong>所有目的地</strong></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-calendar text-info me-2"></i>
+                                        <div>
+                                            <small class="text-muted">出行日期</small>
+                                            <div>{{ task.depart_date.strftime('%Y-%m-%d') }}
+                                            {% if task.return_date %} → {{ task.return_date.strftime('%Y-%m-%d') }}{% endif %}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-currency-yen text-warning me-2"></i>
+                                        <div>
+                                            <small class="text-muted">价格阈值</small>
+                                            <div><strong>¥{{ task.price_threshold }}</strong></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-clock text-muted me-2"></i>
+                                        <div>
+                                            <small class="text-muted">创建时间</small>
+                                            <div>{{ task.created_at.strftime('%m-%d %H:%M') }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 统计信息 -->
+            {% if stats %}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card text-center border-primary">
+                        <div class="card-body">
+                            <i class="bi bi-airplane display-4 text-primary"></i>
+                            <h4 class="mt-2">{{ stats.total_flights }}</h4>
+                            <p class="text-muted mb-0">总航班数</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center border-info">
+                        <div class="card-body">
+                            <i class="bi bi-currency-dollar display-4 text-info"></i>
+                            <h4 class="mt-2">{{ stats.low_price_count }}</h4>
+                            <p class="text-muted mb-0">低价航班数</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center border-warning">
+                        <div class="card-body">
+                            <i class="bi bi-tag display-4 text-warning"></i>
+                            <h4 class="mt-2">¥{{ stats.min_price }}</h4>
+                            <p class="text-muted mb-0">最低价格</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card text-center border-info">
+                        <div class="card-body">
+                            <i class="bi bi-clock display-4 text-info"></i>
+                            <h4 class="mt-2 small">{{ last_update or '未知' }}</h4>
+                            <p class="text-muted mb-0">最后更新</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- 航班列表 -->
+            {% if flights %}
+            <div class="row mb-4">
+                <div class="col-12">
+                    <h4><i class="bi bi-list-ul text-primary"></i> 最新航班数据</h4>
+                    <p class="text-muted">以下是根据您的监控任务找到的最新航班信息</p>
+                </div>
+            </div>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for flight in flights %}
+                <div class="col">
+                    <div class="card h-100 destination-card {% if flight['价格'] < task.price_threshold %}border-primary{% endif %}">
+                        <!-- 目的地图片 -->
+                        {% if flight.get('图片链接') %}
+                        <div class="destination-image-container">
+                            <img src="{{ flight['图片链接'] }}" class="card-img-top destination-image" alt="{{ flight['目的地'] }}">
+                            <div class="destination-overlay">
+                                {% if flight.get('国家') %}
+                                <span class="country-badge">{{ flight['国家'] }}</span>
+                                {% endif %}
+                                {% if flight['价格'] < task.price_threshold %}
+                                <span class="price-badge">低价</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        <div class="card-body">
+                            <!-- 目的地和价格 -->
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">{{ flight['目的地'] }}
+                                    <small class="text-muted">({{ flight.get('目的地代码', flight.get('代码', '')) }})</small>
+                                </h5>
+                                <span class="price-tag {% if flight['价格'] < task.price_threshold %}text-primary{% endif %}">
+                                    {{ flight['价格'] }} {{ flight.get('货币', 'CNY') }}
+                                </span>
+                            </div>
+
+                            <div class="flight-details">
+                                <!-- 航线信息 -->
+                                <div class="detail-item">
+                                    <i class="bi bi-airplane"></i>
+                                    <span class="route-info">{{ task.departure_city }} → {{ flight['目的地'] }}</span>
+                                </div>
+
+                                <!-- 行程类型 -->
+                                <div class="detail-item">
+                                    <i class="bi bi-arrow-left-right"></i>
+                                    <span>{% if task.return_date %}往返{% else %}单程{% endif %}</span>
+                                </div>
+
+                                <!-- 出发日期 -->
+                                <div class="detail-item">
+                                    <i class="bi bi-calendar-event"></i>
+                                    <span>{{ task.depart_date }}{% if task.return_date %} - {{ task.return_date }}{% endif %}</span>
+                                </div>
+
+                                <!-- 热度（如果有） -->
+                                {% if flight.get('热度') %}
+                                <div class="detail-item">
+                                    <i class="bi bi-fire"></i>
+                                    <div class="heat-meter" title="热度: {{ flight['热度'] }}">
+                                        <div class="heat-fill" data-heat="{{ flight['热度'] }}"></div>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                <!-- 标签（如果有） -->
+                                {% if flight.get('标签') %}
+                                <div class="detail-item">
+                                    <i class="bi bi-tag"></i>
+                                    <span class="tags">{{ flight['标签'] }}</span>
+                                </div>
+                                {% endif %}
+
+                                <!-- 航班详细信息（只在有具体信息时显示） -->
+                                {% if flight.get('航空公司') and flight['航空公司'] != '查看详情' %}
+                                <div class="detail-item">
+                                    <i class="bi bi-building"></i>
+                                    <span>{{ flight['航空公司'] }}</span>
+                                </div>
+                                {% endif %}
+
+                                {% if flight.get('航班号') and flight['航班号'] != '查看详情' %}
+                                <div class="detail-item">
+                                    <i class="bi bi-airplane-fill"></i>
+                                    <span>{{ flight['航班号'] }}</span>
+                                </div>
+                                {% endif %}
+
+                                <!-- 时间信息（只在有具体信息时显示） -->
+                                {% if flight.get('出发时间') and flight['出发时间'] != '查看详情' %}
+                                <div class="detail-item">
+                                    <i class="bi bi-clock"></i>
+                                    <span>{{ flight['出发时间'] }} - {{ flight.get('到达时间', '') }}</span>
+                                </div>
+                                {% endif %}
+
+                                <!-- 飞行时长和中转信息（只在有具体信息时显示） -->
+                                {% if flight.get('飞行时长') and flight['飞行时长'] != '查看详情' %}
+                                <div class="detail-item">
+                                    <i class="bi bi-stopwatch"></i>
+                                    <span>{{ flight['飞行时长'] }}</span>
+                                    {% if flight.get('中转次数', 0) > 0 %}
+                                    <span class="badge bg-warning ms-2">{{ flight['中转次数'] }}次中转</span>
+                                    {% else %}
+                                    <span class="badge bg-primary ms-2">直飞</span>
+                                    {% endif %}
+                                </div>
+                                {% else %}
+                                <!-- 如果没有飞行时长信息，只显示中转状态 -->
+                                <div class="detail-item">
+                                    <i class="bi bi-info-circle"></i>
+                                    {% if flight.get('中转次数', 0) > 0 %}
+                                    <span class="badge bg-warning">{{ flight['中转次数'] }}次中转</span>
+                                    {% else %}
+                                    <span class="badge bg-primary">直飞</span>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-transparent border-top-0">
+                            <a href="{{ flight.get('链接', flight.get('预订链接', '#')) }}" target="_blank" class="btn btn-primary w-100">
+                                <i class="bi bi-box-arrow-up-right"></i> 立即预订
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-search display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">暂时没有航班数据</h4>
+                <p class="text-muted">请稍等，我们正在为您搜索符合条件的航班信息。<br>
+这可能需要几分钟时间。</p>
+            </div>
+            {% endif %}
+
+        {% else %}
+            <!-- 没有监控任务时的提示 -->
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted"></i>
+                <h4 class="mt-3 text-muted">暂时没有监控任务</h4>
+                <p class="text-muted">创建您的第一个监控任务，开始监控航班价格和信息</p>
+                <button class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#createTaskModal">
+                    <i class="bi bi-plus-circle"></i> 创建监控任务
+                </button>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- 创建任务模态框 -->
+    <div class="modal fade" id="createTaskModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modern-modal">
+                <div class="modal-header modern-modal-header">
+                    <div class="modal-title-wrapper">
+                        <div class="modal-icon">
+                            <i class="bi bi-plus-circle-fill"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0">创建监控任务</h5>
+                            <p class="modal-subtitle">设置您的个性化机票监控</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close modern-btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('create_task') }}">
+                    <div class="modal-body modern-modal-body">
+                        <!-- 监控设置卡片 -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <i class="bi bi-gear-fill"></i>
+                                <span>监控设置</span>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="modern-form-group">
+                                    <label class="modern-label">
+                                        <i class="bi bi-currency-yen"></i>
+                                        价格阈值
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input type="number" class="form-control modern-input" id="price_threshold" name="price_threshold"
+                                               value="1000" min="100" step="50" required>
+                                        <span class="input-suffix">元</span>
+                                    </div>
+                                    <small class="form-hint">低于此价格时将发送通知</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 行程信息卡片 -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <i class="bi bi-airplane-fill"></i>
+                                <span>行程信息</span>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="modern-form-group">
+                                    <label class="modern-label">
+                                        <i class="bi bi-geo-alt"></i>
+                                        出发城市
+                                    </label>
+                                    <input type="text" class="form-control modern-input" id="departure_city" name="departure_city"
+                                           placeholder="如：BJS" pattern="[A-Z]{3}" title="请输入3位大写字母的城市代码" required>
+                                    <small class="form-hint">
+                                        <i class="bi bi-info-circle"></i>
+                                        支持全球IATA城市代码：BJS(北京) • SHA(上海) • LAX(洛杉矶) • LHR(伦敦)
+                                    </small>
+                                </div>
+
+                                <div class="date-group">
+                                    <div class="modern-form-group">
+                                        <label class="modern-label">
+                                            <i class="bi bi-calendar-event"></i>
+                                            出发日期
+                                        </label>
+                                        <input type="date" class="form-control modern-input" id="depart_date" name="depart_date" required>
+                                    </div>
+                                    <div class="modern-form-group">
+                                        <label class="modern-label">
+                                            <i class="bi bi-calendar-check"></i>
+                                            返回日期
+                                        </label>
+                                        <input type="date" class="form-control modern-input" id="return_date" name="return_date">
+                                        <small class="form-hint">可选，留空为单程</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 通知设置卡片 -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <i class="bi bi-bell-fill"></i>
+                                <span>通知设置</span>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="modern-form-group">
+                                    <label class="modern-label">
+                                        <i class="bi bi-key"></i>
+                                        PushPlus令牌
+                                    </label>
+                                    <input type="text" class="form-control modern-input" id="pushplus_token" name="pushplus_token"
+                                           placeholder="输入您的PushPlus令牌（可选）">
+                                    <div class="notification-features">
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle text-primary"></i>
+                                            <span>免费接收低价机票通知</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-shield-check text-primary"></i>
+                                            <span>安全可靠，无需实名认证</span>
+                                        </div>
+                                        <a href="http://www.pushplus.plus/" target="_blank" class="get-token-btn">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                            获取令牌
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer modern-modal-footer">
+                        <button type="button" class="btn btn-outline-secondary modern-btn" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i>
+                            取消
+                        </button>
+                        <button type="submit" class="btn btn-primary modern-btn">
+                            <i class="bi bi-rocket-takeoff"></i>
+                            创建任务
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑任务模态框 -->
+    <div class="modal fade" id="editTaskModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content modern-modal">
+                <div class="modal-header modern-modal-header">
+                    <div class="modal-title-wrapper">
+                        <div class="modal-icon">
+                            <i class="bi bi-pencil-fill"></i>
+                        </div>
+                        <div>
+                            <h5 class="modal-title mb-0">编辑监控任务</h5>
+                            <p class="modal-subtitle">修改您的监控设置</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close modern-btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="editTaskForm" method="POST">
+                    <div class="modal-body modern-modal-body">
+                        <!-- 监控设置卡片 -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <i class="bi bi-gear-fill"></i>
+                                <span>监控设置</span>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="modern-form-group">
+                                    <label class="modern-label">
+                                        <i class="bi bi-currency-yen"></i>
+                                        价格阈值
+                                    </label>
+                                    <div class="input-wrapper">
+                                        <input type="number" class="form-control modern-input" id="edit_price_threshold" name="price_threshold"
+                                               min="100" step="50" required>
+                                        <span class="input-suffix">元</span>
+                                    </div>
+                                    <small class="form-hint">低于此价格时将发送通知</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 行程信息卡片 -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <i class="bi bi-airplane-fill"></i>
+                                <span>行程信息</span>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="modern-form-group">
+                                    <label class="modern-label">
+                                        <i class="bi bi-geo-alt"></i>
+                                        出发城市
+                                    </label>
+                                    <input type="text" class="form-control modern-input" id="edit_departure_city" name="departure_city"
+                                           placeholder="如：BJS" pattern="[A-Z]{3}" title="请输入3位大写字母的城市代码" required>
+                                    <small class="form-hint">
+                                        <i class="bi bi-info-circle text-primary"></i>
+                                        支持全球IATA城市代码：BJS(北京) • SHA(上海) • LAX(洛杉矶) • LHR(伦敦)
+                                    </small>
+                                </div>
+
+                                <div class="date-group">
+                                    <div class="modern-form-group">
+                                        <label class="modern-label">
+                                            <i class="bi bi-calendar-event"></i>
+                                            出发日期
+                                        </label>
+                                        <input type="date" class="form-control modern-input" id="edit_depart_date" name="depart_date" required>
+                                    </div>
+                                    <div class="modern-form-group">
+                                        <label class="modern-label">
+                                            <i class="bi bi-calendar-check"></i>
+                                            返回日期
+                                        </label>
+                                        <input type="date" class="form-control modern-input" id="edit_return_date" name="return_date">
+                                        <small class="form-hint">可选，留空为单程</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 通知设置卡片 -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <i class="bi bi-bell-fill"></i>
+                                <span>通知设置</span>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="modern-form-group">
+                                    <label class="modern-label">
+                                        <i class="bi bi-key"></i>
+                                        PushPlus令牌
+                                    </label>
+                                    <input type="text" class="form-control modern-input" id="edit_pushplus_token" name="pushplus_token"
+                                           placeholder="输入您的PushPlus令牌（可选）">
+                                    <div class="notification-features">
+                                        <div class="feature-item">
+                                            <i class="bi bi-check-circle text-primary"></i>
+                                            <span>免费接收低价机票通知</span>
+                                        </div>
+                                        <div class="feature-item">
+                                            <i class="bi bi-shield-check text-primary"></i>
+                                            <span>安全可靠，无需实名认证</span>
+                                        </div>
+                                        <a href="http://www.pushplus.plus/" target="_blank" class="get-token-btn">
+                                            <i class="bi bi-box-arrow-up-right"></i>
+                                            获取令牌
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer modern-modal-footer">
+                        <button type="button" class="btn btn-outline-secondary modern-btn" data-bs-dismiss="modal">
+                            <i class="bi bi-x-circle"></i>
+                            取消
+                        </button>
+                        <button type="submit" class="btn btn-primary modern-btn">
+                            <i class="bi bi-check-circle"></i>
+                            更新任务
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 设置默认日期
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const departDateInput = document.getElementById('depart_date');
+            if (departDateInput) {
+                departDateInput.value = tomorrow.toISOString().split('T')[0];
+            }
+
+            // 设置热度条宽度
+            const heatFills = document.querySelectorAll('.heat-fill[data-heat]');
+            heatFills.forEach(function(element) {
+                const heatValue = element.getAttribute('data-heat');
+                if (heatValue) {
+                    element.style.width = heatValue + '%';
+                }
+            });
+
+            // 任务名称现在由后端自动生成，无需前端处理
+        });
+
+        function editTask(taskId) {
+            // 获取任务详情
+            fetch(`/edit-task/${taskId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 填充表单数据
+                document.getElementById('edit_price_threshold').value = data.price_threshold;
+                document.getElementById('edit_departure_city').value = data.departure_city;
+                document.getElementById('edit_depart_date').value = data.depart_date;
+                document.getElementById('edit_return_date').value = data.return_date || '';
+                document.getElementById('edit_pushplus_token').value = data.pushplus_token || '';
+
+                // 设置表单提交地址
+                document.getElementById('editTaskForm').action = `/edit-task/${taskId}`;
+
+                // 显示模态框
+                new bootstrap.Modal(document.getElementById('editTaskModal')).show();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('获取任务信息失败');
+            });
+        }
+
+        function toggleTask(taskId) {
+            if (confirm('确定要切换任务状态吗？')) {
+                fetch(`/toggle-task/${taskId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || '操作失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('操作失败');
+                });
+            }
+        }
+
+        function deleteTask(taskId) {
+            if (confirm('确定要删除这个监控任务吗？此操作不可撤销。')) {
+                fetch(`/delete-task/${taskId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert(data.message || '删除失败');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('删除失败');
+                });
+            }
+        }
+
+        // 移除showSupportedCities函数，因为现在支持所有城市代码
+    </script>
+</body>
+</html>

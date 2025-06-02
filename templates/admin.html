@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理后台 - Ticketradar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=10">
+</head>
+<body>
+    <div class="container">
+        <!-- 导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-light bg-light rounded mt-3 mb-4">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{{ url_for('index') }}">
+                    <i class="bi bi-airplane text-primary"></i> Ticketradar
+                </a>
+
+                <div class="navbar-nav ms-auto">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ current_user.username }}
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('index') }}"><i class="bi bi-house"></i> 首页</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2"></i> 我的监控</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> 退出登录</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="bi bi-gear text-primary"></i> 管理后台</h2>
+        </div>
+
+        <!-- 显示消息 -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3">
+                <div class="card bg-primary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">{{ stats.total_users }}</h4>
+                                <p class="mb-0">总用户数</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-people display-6"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card bg-info text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">{{ stats.active_users }}</h4>
+                                <p class="mb-0">活跃用户</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-person-check display-6"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card bg-secondary text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">{{ stats.total_tasks }}</h4>
+                                <p class="mb-0">监控任务</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-list-task display-6"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <div class="card bg-warning text-white">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h4 class="mb-0">{{ stats.active_invites }}</h4>
+                                <p class="mb-0">有效邀请码</p>
+                            </div>
+                            <div class="align-self-center">
+                                <i class="bi bi-key display-6"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 邀请码管理 -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-key"></i> 邀请码管理</h5>
+                    <button class="btn btn-light btn-sm" data-bs-toggle="modal" data-bs-target="#generateInviteModal">
+                        <i class="bi bi-plus-circle"></i> 生成邀请码
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {% if recent_codes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>邀请码</th>
+                                    <th>状态</th>
+                                    <th>创建时间</th>
+                                    <th>过期时间</th>
+                                    <th>使用次数</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for code in recent_codes %}
+                                <tr>
+                                    <td>
+                                        <code class="user-select-all">{{ code.code }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ code.code }}')">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                    </td>
+                                    <td>
+                                        {% if code.is_active %}
+                                            <span class="badge bg-success">有效</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">已失效</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ code.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>
+                                        {% if code.expires_at %}
+                                            {{ code.expires_at.strftime('%Y-%m-%d %H:%M') }}
+                                        {% else %}
+                                            <span class="text-muted">永不过期</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ code.current_uses }}/{{ code.max_uses }}</td>
+                                    <td>
+                                        {% if code.is_active %}
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deactivateCode({{ code.id }})">
+                                                <i class="bi bi-x-circle"></i> 停用
+                                            </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-key display-4 text-muted"></i>
+                        <p class="text-muted mt-2">暂无邀请码</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- 生成邀请码模态框 -->
+    <div class="modal fade" id="generateInviteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle text-primary"></i> 生成邀请码
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="{{ url_for('generate_invite') }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="count" class="form-label">生成数量</label>
+                            <input type="number" class="form-control" id="count" name="count"
+                                   value="1" min="1" max="50" required>
+                            <div class="form-text">一次最多生成50个邀请码</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="expires_days" class="form-label">有效期 (天)</label>
+                            <input type="number" class="form-control" id="expires_days" name="expires_days"
+                                   placeholder="留空表示永不过期" min="1" max="365">
+                            <div class="form-text">留空表示永不过期，最长365天</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> 生成
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // 显示复制成功提示
+                const toast = document.createElement('div');
+                toast.className = 'toast align-items-center text-white bg-success border-0 position-fixed top-0 end-0 m-3';
+                toast.style.zIndex = '9999';
+                toast.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="bi bi-check-circle"></i> 邀请码已复制到剪贴板
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+
+                const bsToast = new bootstrap.Toast(toast);
+                bsToast.show();
+
+                // 3秒后自动移除
+                setTimeout(() => {
+                    if (toast.parentNode) {
+                        toast.parentNode.removeChild(toast);
+                    }
+                }, 3000);
+            }).catch(function(err) {
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        function deactivateCode(codeId) {
+            if (confirm('确定要停用这个邀请码吗？')) {
+                // TODO: 实现停用功能
+                alert('停用功能开发中...');
+            }
+        }
+    </script>
+</body>
+</html>

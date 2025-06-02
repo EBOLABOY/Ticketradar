@@ -9,11 +9,15 @@ import threading
 import copy  # 用于深拷贝payload
 from dotenv import load_dotenv
 import schedule
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, redirect, url_for, flash, session
+from flask_login import LoginManager, login_required, current_user
+from flask_sqlalchemy import SQLAlchemy
 from waitress import serve
 
 # 1. 请求 URL
 url = "https://hk.trip.com/restapi/soa2/19728/fuzzySearch"
+# 新的航班列表搜索接口，用于指定目的地的查询
+flight_list_url = "https://hk.trip.com/restapi/soa2/27015/FlightListSearchSSE"
 base_url = "https://hk.trip.com" # 定义基础网址，用于拼接跳转链接
 
 # 2. 请求头 (Request Headers) - 注意：Cookie 和其他动态值可能需要更新
@@ -24,7 +28,7 @@ headers = {
     # --- 警告：下面的 Cookie 非常长，且极有可能过期或失效 ---
     'cookie': 'Union=AllianceID=1079381&SID=2043339&OUID=ctag.hash.nwfme5hcv7n6&Expires=1749300305922&createtime=1746708305; _abtest_userid=5b8f2403-9ac5-450a-a6f0-41afa99dda5e; UBT_VID=1746708309569.1d384rgx2qT7; ubtc_trip_pwa=0; _gcl_au=1.1.381608091.1746708313; _fwb=99MHsWgE3ATJbQfCXhE6N7.1746708312920; _tt_enable_cookie=1; _ttp=01JTQYVDDFN89MG1TD7HPN2PAA_.tt.1; _RF1=154.19.184.12; _RSG=hvqFn0LYdBA6ebDB66lhGB; _RDG=28cda73c85c5fa244e24575cd692d19421; _RGUID=a2e78950-313f-4e6b-b42b-bc618b365a06; GUID=09034129218004024014; GUID.sig=Io10lN9GSo-8OOcwKdXKsFQc1EC8YHbiK1p5NUbUfcI; ibulanguage=HK; ibulocale=zh_hk; ibu_country=HK; _fwb=99MHsWgE3ATJbQfCXhE6N7.1746708312920; IBU_FLIGHT_LIST_STYLE=Separate; cookiePricesDisplayed=CNY; _gid=GA1.2.715444595.1746709098; _fbp=fb.1.1746709098820.431379395469181287; adid=174670909955958; ibu_h5_site=HK; ibu_h5_group=trip; ibu_h5_curr=CNY; bm_so=0AB1E950D1A51B97700924D7D46F44E11CE676D5C61F0BDBFCEA780CF12689B3~YAAQL/EPF3TfUa2WAQAArfX/rwOkqE5ay+iXzlOEB3wTrgYgxP06WTGRZAUmhxsp+3v0UoLAVzRPKciM0QJGYYnJQZSuRQNeDqnhp72d96qwqDQbet/b/IC0oTFvi4SAeZfyt4nfjmuWaptHAzfgZe+X7LSkQpCeQ58Z351sqKnMwADvQeFpUd3a7LXZQ87qXyinOV8Uec7jaqo/52paY8+hmM3xojbQUXUbPl8YSZXW+gHBlJvIeUiM/cWhDql4KtRLlFwbUZUrzAG7LhQZnkeyltOy5SUi30FHFesKWWysIzH+gtqLBQpJlhLcbMyRjxUFAGvXRZIXs5Lk6l7IxIjyOKRN1KILz1JS6OmdaoFta7owS8r11DKRjznQeAmUEiptYWEnu9ISx2y0/KurHQ9SaqBUjb6fCap4kMY+mKnhef+sNqx5PNz7EE5zH14JPmMoOGIflTaqOLWn; bm_lso=0AB1E950D1A51B97700924D7D46F44E11CE676D5C61F0BDBFCEA780CF12689B3~YAAQL/EPF3TfUa2WAQAArfX/rwOkqE5ay+iXzlOEB3wTrgYgxP06WTGRZAUmhxsp+3v0UoLAVzRPKciM0QJGYYnJQZSuRQNeDqnhp72d96qwqDQbet/b/IC0oTFvi4SAeZfyt4nfjmuWaptHAzfgZe+X7LSkQpCeQ58Z351sqKnMwADvQeFpUd3a7LXZQ87qXyinOV8Uec7jaqo/22paY8+hmM3xojbQUXUbPl8YSZXW+gHBlJvIeUiM/cWhDql4KtRLlFwbUZUrzAG7LhQZnkeyltOy5SUi30FHFesKWWysIzH+gtqLBQpJlhLcbMyRjxUFAGvXRZIXs5Lk6l7IxIjyOKRN1KILz1JS6OmdaoFta7owS8r11DKRjznQeAmUEiptYWEnu9ISx2y0/KurHQ9SaqBUjb6fCap4kMY+mKnhef+sNqx5PNz7EE5zH14JPmMoOGIflTaqOLWn^1746709527100; _uetsid=1d2794702c0c11f08f457fb9c035cd0f; _uetvid=1d27d5802c0c11f098d07dc253b45eb4; _ga_2DCSB93KS4=GS2.2.s1746709098$o1$g1$t1746709550$j25$l0$h0; ibu_h5_local=zh-hk; ibu_h5_local=zh-hk; ibu_h5_lang=hk; ibu_online_jump_site_result={"site_url":[],"suggestion":[]}; ibu_online_home_language_match={"isRedirect":false,"isShowSuggestion":false,"lastVisited":true,"region":"us","redirectSymbol":false}; trip_test_cookie=1; _ga=GA1.1.1926436688.1746708314; _ga_37RNVFDP1J=GS2.2.s1746709820$o1$g0$t1746709820$j60$l0$h0; _tp_search_latest_channel_name=flights; bm_s=YAAQRfEPF3AE83yWAQAAcDQFsAPXxJuBnvstTNslLwAmiTmDH6ho2aSnOMaCVBjaH31lfohN1vnehuQdHOjnD4zBSKekcVp01de9zz+vzwE0WqnFshSJmcoYk1nsAYfpsqfY+kwUyRRKEgD/qs5CkGgc/8gD0bXHkubC1CcaXXCPeuBLjI3yl73Yz+cu+aqUOq6E2iwiC8W3ssgSTN+6krSPIH/K2RHFbyzN96FLlZqHWwZRFvCGkUNICumAcvbOLujsPs8eVCmAgla2RqNomHQsqPqwpucIekCUJvBfadPPVbELRegrfK9qvcXBAov3dEveXFACElgGQms+ckmNZCHKPadJR8ppOWR7y5H6qug/Is8w9wTUnhcgz3ZhOl8HjU31Lp/vN01AEMvp8BmTQUL6+keXkU4Kep0zngNb+wksLxYmxwH4ohW+b69q/a4/uAwRbed5BH32a7OcNbHKsv3dP5tT6qERPW3RXn25iWqDQiUWpuPjpb5PuVMzvFCFW2BAwhKYpte1q7fGsUkQ/GNvGvC7uCmGV+/r7857k3BTxf8L9I7tfY/ZMDTvz3kQ/5G/QA7hymnEEMc=; _combined=transactionId%3D1-mf-20250508210512456-WEB%26pageId%3D10650034306%26initPageId%3D10320667453; __utma=1.1926436688.1746708314.1746710690.1746710690.1; __utmc=1; __utmz=1.1746710690.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); nfes_isSupportWebP=1; _pd=%7B%22_o%22%3A2%2C%22s%22%3A11%2C%22_s%22%3A1%7D; logoutFlag=true; _bfa=1.1746708309569.1d384rgx2qT7.1.1746710717100.1746710726288.1.40.10650034306; wcs_bt=s_33fb334966e9:1746710726; _ga_X437DZ73MR=GS2.1.s1746708313$o1$g1$t1746710727$j47$l0$h0; ttcsid=1746708313524::PJ7hunQvAgqJ0G7tqTWu.1.1746710727593; cto_bundle=iBPVk19MNXgybkJCQVB3QSUyQmt1dVBKOXRmbzVSSiUyRmZkMFczZ3RsNGMxV1hGV0RLbVNKJTJCRUIlMkIwNlJmRHpUcVc5d1ZNWmFPYmFZVzZ3JTJGbFFCQ21FNExKYkt6MERiZ1JzMExmeXlsUVdCa25RTmZqZDhBTG5hMW51TWxpY3RVaVhNN0xNZmV1bTEzQkJIcVNrbDlUJTJCMyUyQllHUFJFUSUzRCUzRA; ttcsid_CIR4RVBC77UD5V58BBNG=1746708313524::o2kONJ7ykUh6OzyxO2OO.1.1746710727907',
     'origin': 'https://hk.trip.com',
-    'referer': 'https://hk.trip.com/flights/explore?dcity=hkg&ddate=2025-05-30&rdate=2025-06-02&triptype=rt&class=y&quantity=1&searchboxarg=t&nonstoponly=off&locale=zh-HK&curr=CNY',
+    'referer': 'https://hk.trip.com/flights/showfarefirst?dcity=bjs&acity=sel&ddate=2025-06-30&rdate=2025-07-03&triptype=ow&class=y&lowpricesource=searchform&quantity=1&searchboxarg=t&nonstoponly=off&locale=zh-HK&curr=CNY',
     'sec-ch-ua': '"Chromium";v="136", "Microsoft Edge";v="136", "Not.A/Brand";v="99"',
     'sec-ch-ua-mobile': '?0',
     'sec-ch-ua-platform': '"Windows"',
@@ -35,10 +39,13 @@ headers = {
     'x-ctx-country': 'HK',
     'x-ctx-currency': 'CNY',
     'x-ctx-locale': 'zh-HK',
-    'x-ctx-ubt-pageid': '10650034306', # 这个值也可能需要更新
-    'x-ctx-ubt-pvid': '40',           # 这个值也可能需要更新
-    'x-ctx-ubt-sid': '1',             # 这个值也可能需要更新
-    'x-ctx-ubt-vid': '1746708309569.1d384rgx2qT7' # 这个值也可能需要更新
+    'x-ctx-ubt-pvid': '12',
+    'x-ctx-ubt-sid': '24',
+    'x-ctx-ubt-vid': '1746708309569.1d384rgx2qT7',
+    'cookieorigin': 'https://hk.trip.com',
+    'currency': 'CNY',
+    'locale': 'zh-HK',
+    'priority': 'u=1, i'
 }
 
 # 3. 请求载荷 (Request Payload) - 注意：其中一些值可能需要动态更新
@@ -155,7 +162,15 @@ def clean_flight_data(json_data, base_url):
                 '标签': tags_str,
                 '图片链接': image_url,
                 '预订链接': full_jump_url,
-                'is_international': is_international  # 添加国际航线标记
+                'is_international': is_international,  # 添加国际航线标记
+                # 为原始API数据添加缺失的字段，以兼容模板
+                '中转次数': 0,  # 原始API不提供中转信息，默认为直飞
+                '飞行时长': '查看详情',  # 原始API不提供飞行时长
+                '航空公司': '查看详情',  # 原始API不提供航空公司信息
+                '航班号': '查看详情',  # 原始API不提供航班号
+                '出发时间': '查看详情',  # 原始API不提供具体时间
+                '到达时间': '查看详情',  # 原始API不提供具体时间
+                '链接': full_jump_url
             })
         except Exception as e:
             print(f"处理路线时发生错误: {route.get('arriveCity', {}).get('name', '未知路线')} - {e}")
@@ -450,6 +465,369 @@ def generate_beautiful_html_template(title, content_data):
 
     return html
 
+# ---- 独立的用户监控系统 ----
+def check_all_user_monitoring_tasks():
+    """独立的用户监控系统 - 不依赖主循环数据"""
+    try:
+        # 使用直接的SQLite连接，避免Flask应用上下文问题
+        import sqlite3
+        import os
+
+        # 使用与Flask应用相同的数据库路径
+        db_path = os.getenv('DATABASE_URL', 'sqlite:///ticketradar.db').replace('sqlite:///', '')
+        if not os.path.exists(db_path):
+            print("数据库文件不存在，跳过用户监控任务检查")
+            return
+
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+
+        # 查询所有活跃的监控任务
+        cursor.execute('''
+            SELECT id, user_id, name, departure_city, destination_city,
+                   depart_date, return_date, price_threshold, pushplus_token,
+                   last_notification, total_checks, total_notifications
+            FROM monitor_tasks
+            WHERE is_active = 1 AND pushplus_token IS NOT NULL AND pushplus_token != ''
+        ''')
+
+        tasks = cursor.fetchall()
+        print(f"🔍 用户监控系统: 找到 {len(tasks)} 个活跃的用户监控任务")
+
+        for task in tasks:
+            try:
+                task_id, user_id, _, departure_city, destination_city, depart_date, return_date, price_threshold, pushplus_token, last_notification, total_checks, total_notifications = task
+
+                # 获取城市显示名称
+                departure_display = get_city_display_name(departure_city)
+                destination_display = get_city_display_name(destination_city) if destination_city else '所有目的地'
+                print(f"🔍 处理用户任务: {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'})")
+
+                # 检查是否需要发送通知（避免重复通知）
+                current_time = datetime.datetime.now()
+                if last_notification:
+                    last_notif_time = datetime.datetime.fromisoformat(last_notification)
+                    if (current_time - last_notif_time).total_seconds() < 86400:
+                        print(f"任务 {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'}) 在24小时内已发送过通知，跳过")
+                        continue
+
+                # 为每个用户任务获取专属的航班数据
+                task_flights = get_flights_for_user_task(
+                    departure_city, destination_city, depart_date, return_date
+                )
+
+                if not task_flights:
+                    print(f"任务 {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'}) 未获取到航班数据")
+                    continue
+
+                # 过滤低于用户设定阈值的机票
+                low_price_flights = [f for f in task_flights if f.get('价格', 0) <= price_threshold]
+
+                if low_price_flights:
+                    print(f"🎯 任务 {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'}) 发现 {len(low_price_flights)} 个低价机票")
+
+                    # 准备通知内容
+                    content_data = {
+                        'message': f"您的监控任务发现 {len(low_price_flights)} 个价格低于 {price_threshold} 元的机票。",
+                        'departure_city': get_city_display_name(departure_city),
+                        'departure_code': departure_city,
+                        'trip_type': '往返' if return_date else '单程',
+                        'depart_date': depart_date,
+                        'flights': low_price_flights[:10]  # 最多显示10个
+                    }
+
+                    # 如果是往返行程，添加返程日期
+                    if return_date:
+                        content_data['return_date'] = return_date
+
+                    # 构建标题
+                    title = f"[Ticketradar] {departure_display}→{destination_display} - 发现 {len(low_price_flights)} 个低价机票"
+
+                    # 生成HTML通知内容
+                    notification_content = generate_beautiful_html_template(title, content_data)
+
+                    # 发送个人推送（不使用群组）
+                    success = send_pushplus_notification(
+                        pushplus_token,
+                        title,
+                        notification_content,
+                        topic=None  # 个人推送
+                    )
+
+                    if success:
+                        # 更新任务的最后通知时间和统计信息
+                        cursor.execute('''
+                            UPDATE monitor_tasks
+                            SET last_notification = ?, last_check = ?,
+                                total_checks = ?, total_notifications = ?
+                            WHERE id = ?
+                        ''', (
+                            current_time.isoformat(),
+                            current_time.isoformat(),
+                            (total_checks or 0) + 1,
+                            (total_notifications or 0) + 1,
+                            task_id
+                        ))
+                        conn.commit()
+
+                        print(f"✅ 已向用户 {user_id} 发送监控任务 '{departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'})' 的低价通知")
+                    else:
+                        print(f"❌ 向用户 {user_id} 发送通知失败")
+                else:
+                    print(f"任务 {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'}) 未发现低于 {price_threshold} 元的机票")
+                    # 即使没有低价机票，也要更新检查时间
+                    cursor.execute('''
+                        UPDATE monitor_tasks
+                        SET last_check = ?, total_checks = ?
+                        WHERE id = ?
+                    ''', (
+                        datetime.datetime.now().isoformat(),
+                        (total_checks or 0) + 1,
+                        task_id
+                    ))
+                    conn.commit()
+
+            except Exception as e:
+                print(f"处理用户监控任务 {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'}) 时出错: {e}")
+                import traceback
+                print(f"错误详情: {traceback.format_exc()}")
+                continue
+
+        conn.close()
+
+    except Exception as e:
+        print(f"用户监控系统出错: {e}")
+
+def fetch_flights_with_session(departure_city, destination_city, depart_date, payload):
+    """简化版本：直接访问页面获取信息，用什么就是什么"""
+    try:
+        print(f"🔍 简化获取: {departure_city} → {destination_city}")
+
+        # 创建普通Session
+        session = requests.Session()
+
+        # 构建搜索页面URL
+        search_url = f"https://hk.trip.com/flights/showfarefirst?dcity={departure_city.lower()}&acity={destination_city.lower()}&ddate={depart_date}&triptype=ow&class=y&lowpricesource=searchform&quantity=1&searchboxarg=t&nonstoponly=off&locale=zh-HK&curr=CNY"
+
+        # 简化策略：访问页面获取基本Cookie
+        print(f"🔍 访问搜索页面获取Cookie...")
+        try:
+            page_response = session.get(search_url, timeout=30)
+            print(f"✅ 页面访问成功，状态码: {page_response.status_code}")
+            print(f"📊 获得Cookie数量: {len(session.cookies)}")
+        except Exception as e:
+            print(f"⚠️ 页面访问失败: {e}")
+            # 即使失败也继续，使用空Cookie
+
+        # 构建简单的headers
+        headers = {
+            'Accept': 'text/event-stream',
+            'Content-Type': 'application/json; charset=utf-8',
+            'Currency': 'CNY',
+            'Locale': 'zh-HK',
+            'Origin': 'https://hk.trip.com',
+            'Referer': search_url,
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36',
+            'X-Ctx-Country': 'HK',
+            'X-Ctx-Currency': 'CNY',
+            'X-Ctx-Locale': 'zh-HK',
+            # 添加已知有效的认证信息
+            'Token': '1001-common-7OGr9GJ8sIfqW4tRB3eL8WMHK7LwpgjOnWdfjbaEgajzoJBSYQPWMlYhXw7ajDUWb0jsaYAUy3TyOHYDlR5dw8sKOhJkovZDiXpE6AvN0yzhYmNJL6vhYQZx83YSzI54RNTyfqEXojN7j9AEHsYcniUSi31Y9Tj3UihTYMtycE7ArBYLDrD1Rp8E1Pwa7ypPEHYBMRtPxMmi07Rqcy7lESqwpmy0SWt5jktiHpWMfvs0JDZw4lvXbIdqRDZyoqidmj5QEZtw0Uxfbe7FYNTJHLwh6yOOKMdwOFizYcFrShwFQw57jMqyO9vzsyf5w9MyqnwktvzneotE9BEs8WmzwM3e0ZEPbv3Uj0by8oep6Jo0vHBvP5wBkenNyMpyBNROAjDOwQaJFgwDXiDZvTsjXQEHBJ13WnPwqBrZY59yk9x4Fvp3EcQEXdYQ3wLTwNnJhPY6mwtOw60EokR6Yt9wfsRT7Y3DYdDEfFxAURBaw7YkAyfBvO9vsgvG7eZBYP5iQTY0XJ4BvB5ypYOpvobvOpegkeXaEFBjnpWM7Eb1YkkKlYDlypnEaPy4ArgsKBAedhELAWFcxl0EDhELYtNrPBeZjfURmBYTQjU3W7ceQbjLsWf9WNoRbgR6HxDYUPWbAK0DWqZRZ0YHkj4ZWD8eNtyDpJ0FYBQrNygh',
+            'X-Ctx-Ubt-Pvid': '13',
+            'X-Ctx-Ubt-Sid': '25',
+            'X-Ctx-Ubt-Vid': '1746708309569.1d384rgx2qT7'
+        }
+
+        print(f"✅ 简化headers构建完成")
+
+        # 智能重试机制调用API
+        api_url = "https://hk.trip.com/restapi/soa2/27015/FlightListSearchSSE"
+        max_retries = 3
+        final_response = None
+
+        for attempt in range(max_retries):
+            print(f"🔄 第{attempt+1}次API请求...")
+
+            try:
+                response = session.post(api_url, headers=headers, json=payload, stream=True, timeout=30)
+                print(f"✅ API响应状态码: {response.status_code}")
+
+                if response.status_code == 200:
+                    # 快速检查响应质量
+                    response_preview = ""
+                    line_count = 0
+
+                    # 读取前几行来判断数据质量
+                    for line_bytes in response.iter_lines():
+                        if line_count > 10:
+                            break
+                        if line_bytes:
+                            line = line_bytes.decode('utf-8', errors='replace').strip()
+                            response_preview += line + "\n"
+                            line_count += 1
+
+                    # 检查数据质量
+                    has_flights = '"itineraryList"' in response_preview
+                    has_good_data = ('"recordCount":' in response_preview and
+                                   not '"recordCount":0' in response_preview and
+                                   not '"recordCount": 0' in response_preview)
+
+                    print(f"🔍 数据质量检查:")
+                    print(f"    - 包含航班数据: {has_flights}")
+                    print(f"    - 数据质量良好: {has_good_data}")
+
+                    if has_flights and has_good_data:
+                        print(f"✅ 第{attempt+1}次请求获得优质数据")
+                        # 重新请求获取完整响应
+                        final_response = session.post(api_url, headers=headers, json=payload, stream=True, timeout=30)
+                        break
+                    elif has_flights:
+                        print(f"⚠️ 第{attempt+1}次请求数据有限，可能遇到验证")
+                        if attempt < max_retries - 1:
+                            print(f"🔄 等待{2 + attempt}秒后重试...")
+                            time.sleep(2 + attempt)
+                            continue
+                        else:
+                            # 最后一次，即使数据有限也使用
+                            final_response = session.post(api_url, headers=headers, json=payload, stream=True, timeout=30)
+                    else:
+                        print(f"❌ 第{attempt+1}次请求无有效数据")
+                        if attempt < max_retries - 1:
+                            print(f"🔄 等待{2 + attempt}秒后重试...")
+                            time.sleep(2 + attempt)
+                            continue
+                        else:
+                            final_response = response
+                else:
+                    print(f"❌ API请求失败，状态码: {response.status_code}")
+                    if attempt < max_retries - 1:
+                        print(f"🔄 等待{2 + attempt}秒后重试...")
+                        time.sleep(2 + attempt)
+                        continue
+                    else:
+                        final_response = response
+
+            except Exception as e:
+                print(f"❌ 第{attempt+1}次请求异常: {e}")
+                if attempt < max_retries - 1:
+                    print(f"🔄 等待{2 + attempt}秒后重试...")
+                    time.sleep(2 + attempt)
+                    continue
+                else:
+                    raise e
+
+        print(f"🎯 简化获取完成，返回最终响应")
+        return final_response
+
+    except Exception as e:
+        print(f"🔍 简化获取失败: {e}")
+        raise e
+
+def get_flights_for_user_task(departure_city, destination_city, depart_date, return_date):
+    """为用户任务获取专属的航班数据"""
+    try:
+        departure_display = get_city_display_name(departure_city)
+        destination_display = get_city_display_name(destination_city) if destination_city else '所有目的地'
+        print(f"🔍 获取用户任务航班数据: {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'})")
+
+        # 用户监控任务只监控所有目的地，使用原接口
+        print(f"🔍 用户监控: 使用原接口获取 {departure_city} → 所有目的地 航班")
+        # 创建特定的payload
+        task_payload = create_payload_for_user_task(
+            departure_code=departure_city,
+            destination_code=None,  # 固定为None，只监控所有目的地
+            depart_date=depart_date,
+            return_date=return_date
+        )
+        # 发送API请求
+        response = requests.post(url, headers=headers, json=task_payload, timeout=30)
+        response.raise_for_status()
+
+        # 用户监控任务只使用原接口的解析函数
+        print(f"🔍 用户监控: 使用原解析函数")
+        response_data = response.json()
+        routes_count = len(response_data.get('routes', []))
+        print(f"🔍 API响应: {routes_count} 个routes")
+
+        # 清洗数据 - 使用更健壮的方法
+        cleaned_data = []
+
+        if response_data.get('routes'):
+            print(f"🔍 找到 {len(response_data['routes'])} 个routes，开始清洗...")
+
+            for idx, route in enumerate(response_data['routes']):
+                try:
+                    arrive_city_info = route.get('arriveCity', {})
+                    price_info_list = route.get('pl', [])
+
+                    # 保留第一个route的原始数据用于调试
+                    if idx == 0:
+                        print(f"🔍 原始route数据样本:")
+                        print(f"    route键: {list(route.keys())}")
+                        print(f"    arriveCity: {arrive_city_info}")
+                        if price_info_list:
+                            print(f"    price_info: {price_info_list[0]}")
+                        print(f"    完整route: {route}")
+
+                    if arrive_city_info and price_info_list:
+                        price_info = price_info_list[0]
+
+                        # 手动构建航班数据
+                        flight_data = {
+                            '目的地': arrive_city_info.get('name', '未知'),
+                            '代码': arrive_city_info.get('code', 'N/A'),
+                            '国家': arrive_city_info.get('countryName', '未知'),
+                            '价格': price_info.get('price', 0),
+                            '货币': price_info.get('currency', 'CNY'),
+                            '出发日期': price_info.get('departDate', 'N/A'),
+                            '返程日期': price_info.get('returnDate', 'N/A'),
+                            '热度': route.get('hot', 0),
+                            '标签': ', '.join([tag.get('name', '') for tag in route.get('tags', []) if tag.get('name')]),
+                            '图片链接': arrive_city_info.get('imageUrl', None),
+                            '预订链接': base_url + price_info.get('jumpUrl', '') if price_info.get('jumpUrl', '').startswith('/') else price_info.get('jumpUrl', ''),
+                            'is_international': route.get('isIntl', False),
+                            # 为原始API数据添加缺失的字段，以兼容模板
+                            '中转次数': 0,  # 原始API不提供中转信息，默认为直飞
+                            '飞行时长': '查看详情',  # 原始API不提供飞行时长
+                            '航空公司': '查看详情',  # 原始API不提供航空公司信息
+                            '航班号': '查看详情',  # 原始API不提供航班号
+                            '出发时间': '查看详情',  # 原始API不提供具体时间
+                            '到达时间': '查看详情',  # 原始API不提供具体时间
+                            '链接': base_url + price_info.get('jumpUrl', '') if price_info.get('jumpUrl', '').startswith('/') else price_info.get('jumpUrl', '')
+                        }
+
+                        cleaned_data.append(flight_data)
+
+                except Exception as e:
+                    print(f"🔍 处理route时出错: {e}")
+                    continue
+
+        print(f"🔍 清洗后: {len(cleaned_data)} 个航班")
+
+        # 如果手动清洗失败，回退到原始函数
+        if not cleaned_data and response_data.get('routes'):
+            print(f"🔍 手动清洗失败，回退到原始清洗函数...")
+            try:
+                cleaned_data = clean_flight_data(response_data, base_url)
+                print(f"🔍 回退清洗结果: {len(cleaned_data)} 个航班")
+            except Exception as e:
+                print(f"🔍 回退清洗也失败: {e}")
+                cleaned_data = []
+
+        return cleaned_data
+
+    except Exception as e:
+        print(f"获取用户任务航班数据失败: {e}")
+        return []
+
+# ---- 保留原函数用于向后兼容 ----
+def check_user_monitoring_tasks(departure_code=None, flights_data=None):
+    """保留原函数用于向后兼容，但不再使用"""
+    # 这个函数现在什么都不做，因为我们使用独立的用户监控系统
+    # 避免未使用参数警告
+    _ = departure_code, flights_data
+    pass
+
 # ---- PushPlus推送函数 ----
 def send_pushplus_notification(token, title, content, template="html", topic=None):
     """
@@ -566,7 +944,7 @@ def main(departure_code=None):
         extract_trip_info_from_payload(current_payload)
 
         # 发送POST请求
-        print(f"开始发送请求，始发地: {departure_cities.get(current_departure, current_departure)}...")
+        print(f"开始发送请求，始发地: {get_city_display_name(current_departure)}...")
         response = requests.post(url, headers=headers, json=current_payload, timeout=30)
         response.raise_for_status()
 
@@ -646,7 +1024,7 @@ def main(departure_code=None):
                         # 准备通知内容数据
                         content_data = {
                             'message': f"为您发现{len(flights_to_notify)}个价格低于{price_threshold}元的境外机票。",
-                            'departure_city': departure_cities[current_departure],
+                            'departure_city': get_city_display_name(current_departure),
                             'departure_code': current_departure,  # 添加始发地代码，用于构建特定链接
                             'trip_type': app_settings['trip_type'],
                             'depart_date': app_settings['depart_date'],
@@ -658,7 +1036,7 @@ def main(departure_code=None):
                             content_data['return_date'] = app_settings['return_date']
 
                         # 构建简洁的标题
-                        title = f"Ticketradar - {departure_cities[current_departure]}发现{len(flights_to_notify)}个低价机票"
+                        title = f"Ticketradar - {get_city_display_name(current_departure)}发现{len(flights_to_notify)}个低价机票"
 
                         # 生成漂亮的HTML通知内容
                         notification_content = generate_beautiful_html_template(
@@ -674,7 +1052,7 @@ def main(departure_code=None):
                         topic = os.getenv(topic_env_var) if topic_env_var else None
 
                         # 构建标题，包含始发地信息，使用flights_to_notify的长度确保与内容一致
-                        title = f"[Ticketradar] {departure_cities[current_departure]}出发 - 发现{len(flights_to_notify)}个低价境外机票"
+                        title = f"[Ticketradar] {get_city_display_name(current_departure)}出发 - 发现{len(flights_to_notify)}个低价境外机票"
 
                         # 发送群组推送
                         send_pushplus_notification(
@@ -690,6 +1068,8 @@ def main(departure_code=None):
                     print("应用过滤条件后没有符合条件的低价境外目的地")
             else:
                 print(f"没有发现价格低于{price_threshold}的境外目的地")
+
+            # 注意：用户监控任务现在由独立的循环处理，不再在主循环中处理
         else:
             print("未能从响应中清洗出有效的航班数据。")
 
@@ -711,19 +1091,138 @@ def main(departure_code=None):
 
 # ---- 全局变量 ----
 app = Flask(__name__)
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-this')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///ticketradar.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# 配置CORS - 允许跨域请求
+try:
+    from flask_cors import CORS
+    CORS(app, origins=['*'])  # 生产环境建议限制具体域名
+    print("✅ CORS支持已启用")
+except ImportError:
+    print("⚠️ flask-cors未安装，跨域请求可能受限")
+
+# 初始化扩展
+db = SQLAlchemy(app)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+login_manager.login_message = '请先登录'
+login_manager.login_message_category = 'info'
+
+# ---- 简化的用户模型 ----
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
+import string
+
+class User(UserMixin, db.Model):
+    """用户模型"""
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    last_login = db.Column(db.DateTime)
+    is_active = db.Column(db.Boolean, default=True)
+    pushplus_token = db.Column(db.String(255))
+
+    # 关联监控任务
+    monitor_tasks = db.relationship('MonitorTask', backref='user', lazy=True, cascade='all, delete-orphan')
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+class InviteCode(db.Model):
+    """邀请码模型"""
+    __tablename__ = 'invite_codes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    code = db.Column(db.String(32), unique=True, nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    expires_at = db.Column(db.DateTime)
+    used_by = db.Column(db.Integer, db.ForeignKey('users.id'))
+    used_at = db.Column(db.DateTime)
+    is_active = db.Column(db.Boolean, default=True)
+    max_uses = db.Column(db.Integer, default=1)
+    current_uses = db.Column(db.Integer, default=0)
+
+    @staticmethod
+    def generate_code(length=16):
+        characters = string.ascii_letters + string.digits
+        return ''.join(secrets.choice(characters) for _ in range(length))
+
+    def is_valid(self):
+        if not self.is_active:
+            return False
+        if self.expires_at and datetime.datetime.now(datetime.timezone.utc) > self.expires_at:
+            return False
+        if self.current_uses >= self.max_uses:
+            return False
+        return True
+
+    def use_code(self, user_id):
+        if not self.is_valid():
+            return False
+        self.used_by = user_id
+        self.used_at = datetime.datetime.now(datetime.timezone.utc)
+        self.current_uses += 1
+        if self.current_uses >= self.max_uses:
+            self.is_active = False
+        return True
+
+class MonitorTask(db.Model):
+    """监控任务模型"""
+    __tablename__ = 'monitor_tasks'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    name = db.Column(db.String(100), nullable=False)
+    departure_city = db.Column(db.String(50), nullable=False)
+    departure_code = db.Column(db.String(10), nullable=False)
+    destination_city = db.Column(db.String(50))
+    depart_date = db.Column(db.Date, nullable=False)
+    return_date = db.Column(db.Date)
+    trip_type = db.Column(db.String(10), default='round_trip')
+    price_threshold = db.Column(db.Float, default=1000.0)
+    pushplus_token = db.Column(db.String(255))  # 用户个人PushPlus令牌
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
+    last_check = db.Column(db.DateTime)
+    last_notification = db.Column(db.DateTime)  # 最后通知时间
+    total_checks = db.Column(db.Integer, default=0)  # 总检查次数
+    total_notifications = db.Column(db.Integer, default=0)  # 总通知次数
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
+
 last_update_time = None
 flights_data = []  # 当前选中始发地的航班数据
 all_flights_data = {}  # 存储所有始发地的航班数据，格式: {'HKG': [...], 'CAN': [...], 'SZX': [...], 'MFM': [...]}
 current_departure = None  # 当前选中的始发地，将在程序启动时从环境变量中读取
 first_run_completed = False  # 标记第一次运行是否完成
 
-# 始发地映射表
-departure_cities = {
+# 始发地映射表 - 扩展支持更多城市
+# 主页显示的城市（只包含您需要的4个城市）
+homepage_cities = {
     'HKG': '香港',
-    'CAN': '广州',
     'SZX': '深圳',
+    'CAN': '广州',
     'MFM': '澳门'
 }
+
+def get_city_display_name(city_code):
+    """获取城市显示名称，优先使用中文名，否则使用代码"""
+    return homepage_cities.get(city_code, city_code.upper()) if city_code else 'N/A'
 
 # 始发地对应的PushPlus群组编码变量名映射
 pushplus_topic_env_vars = {
@@ -757,20 +1256,20 @@ def index(departure_code=None):
     """Web首页，支持选择不同始发地"""
     global last_update_time, flights_data, app_settings, app_stats, current_departure, all_flights_data
 
-    # 如果指定了始发地，且是有效的始发地代码，则切换到该始发地
-    if departure_code and departure_code in departure_cities:
-        current_departure = departure_code
-        app_settings['departure_code'] = departure_code
-        app_settings['departure_city'] = departure_cities[departure_code]
+    # 如果指定了始发地，且格式正确，则切换到该始发地
+    if departure_code and len(departure_code) == 3 and departure_code.isalpha():
+        current_departure = departure_code.upper()
+        app_settings['departure_code'] = current_departure
+        app_settings['departure_city'] = get_city_display_name(current_departure)
 
         # 如果已经有该始发地的数据，则使用该数据
-        if departure_code in all_flights_data:
-            flights_data = all_flights_data[departure_code]
+        if current_departure in all_flights_data:
+            flights_data = all_flights_data[current_departure]
 
     # 如果没有当前始发地的数据，显示空数据
     if not flights_data:
         # 不再从CSV文件加载数据
-        print(f"当前始发地 {departure_cities.get(current_departure, current_departure)} 没有数据，等待下次API请求更新。")
+        print(f"当前始发地 {get_city_display_name(current_departure)} 没有数据，等待下次API请求更新。")
 
     # 确保当前始发地在app_stats中存在
     if current_departure not in app_stats:
@@ -783,6 +1282,9 @@ def index(departure_code=None):
         'SZX': 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=gQGe8DwAAAAAAAAAAS5odHRwOi8vd2VpeGluLnFxLmNvbS9xLzAyUzlJVkZqMDVjWEQxbFBHNmhFY0gAAgRz3R5oAwQAjScA',
         'MFM': 'https://mp.weixin.qq.com/cgi-bin/showqrcode?ticket=gQHK8TwAAAAAAAAAAS5odHRwOi8vd2VpeGluLnFxLmNvbS9xLzAyNjQzLUZDMDVjWEQxaVNqeGhFYzgAAgS2hjloAwQAjScA'
     }
+
+    # 主页只显示指定的4个城市，不管是否有数据
+    departure_cities = homepage_cities.copy()
 
     return render_template('index.html',
                           flights=flights_data,
@@ -797,7 +1299,73 @@ def index(departure_code=None):
 def api_flights():
     """API接口 - 获取航班数据"""
     global flights_data
-    return jsonify(flights_data)
+
+    # 添加CORS头部
+    response = jsonify(flights_data)
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+
+    return response
+
+@app.route('/api/flights/<departure_code>')
+def api_flights_by_city(departure_code):
+    """API接口 - 获取指定城市的航班数据"""
+    departure_code = departure_code.upper()
+
+    # 验证城市代码格式
+    if len(departure_code) != 3 or not departure_code.isalpha():
+        return jsonify({
+            'error': f'城市代码格式错误: {departure_code}，必须是3位字母'
+        }), 400
+
+    # 如果已有数据，直接返回
+    if departure_code in all_flights_data:
+        return jsonify({
+            'departure_code': departure_code,
+            'departure_city': get_city_display_name(departure_code),
+            'flights': all_flights_data[departure_code],
+            'last_update': last_update_time,
+            'cached': True
+        })
+
+    # 如果没有数据，尝试获取
+    try:
+        # 临时获取该城市的数据
+        temp_flights = fetch_flights_for_city(departure_code)
+        return jsonify({
+            'departure_code': departure_code,
+            'departure_city': get_city_display_name(departure_code),
+            'flights': temp_flights,
+            'last_update': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'cached': False
+        })
+    except Exception as e:
+        return jsonify({
+            'error': f'获取 {get_city_display_name(departure_code)} 航班数据失败: {str(e)}',
+            'departure_code': departure_code,
+            'departure_city': get_city_display_name(departure_code)
+        }), 500
+
+@app.route('/api/supported-cities')
+def api_supported_cities():
+    """API接口 - 获取当前有数据的城市列表"""
+    cities_with_data = [
+        {
+            'code': code,
+            'name': get_city_display_name(code),
+            'has_data': True,
+            'flight_count': len(flights)
+        }
+        for code, flights in all_flights_data.items()
+        if flights
+    ]
+
+    return jsonify({
+        'cities': cities_with_data,
+        'total': len(cities_with_data),
+        'message': '支持任意有效的IATA城市代码，以上为当前有数据的城市'
+    })
 
 @app.route('/show_qr')
 def show_qr():
@@ -805,6 +1373,620 @@ def show_qr():
     # 这个路由主要是提供一个专门的页面来显示二维码
     # 实际的二维码URL会通过URL参数传递给qr_code_display_page.html
     return render_template('qr_code_display_page.html')
+
+@app.route('/test-cities')
+def test_cities():
+    """测试城市支持页面"""
+    return f"""
+    <html>
+    <head><title>城市支持测试</title></head>
+    <body>
+        <h1>城市支持测试</h1>
+        <h2>支持任意有效的IATA城市代码</h2>
+
+        <h3>当前有数据的城市:</h3>
+        <ul>
+        {''.join([f'<li>{code} - {get_city_display_name(code)} ({len(flights)}个航班)</li>' for code, flights in all_flights_data.items() if flights])}
+        </ul>
+
+        <h3>测试创建BJS任务:</h3>
+        <form method="post" action="/test-create-bjs">
+            <input type="submit" value="测试创建BJS任务">
+        </form>
+    </body>
+    </html>
+    """
+
+@app.route('/test-create-bjs', methods=['POST'])
+def test_create_bjs():
+    """测试创建BJS任务"""
+    departure_city = 'BJS'
+
+    # 验证逻辑（复制自create_task）
+    errors = []
+
+    if not departure_city:
+        errors.append('请输入出发城市代码')
+    elif len(departure_city) != 3 or not departure_city.isalpha():
+        errors.append('出发城市代码必须是3位字母，如：BJS、SHA、CAN、SZX等')
+
+    result = f"""
+    <html>
+    <head><title>BJS任务创建测试结果</title></head>
+    <body>
+        <h1>BJS任务创建测试结果</h1>
+        <p>测试城市代码: {departure_city}</p>
+        <p>验证结果: {'通过' if not errors else '失败'}</p>
+
+        {'<h3>错误信息:</h3><ul>' + ''.join([f'<li>{error}</li>' for error in errors]) + '</ul>' if errors else '<p>✅ 验证通过，BJS城市代码有效！</p>'}
+
+        <p><a href="/test-cities">返回测试页面</a></p>
+    </body>
+    </html>
+    """
+
+    return result
+
+@app.route('/clear-cache')
+def clear_cache():
+    """清除缓存并重定向到dashboard"""
+    # 清除所有flash消息
+    session.clear()
+
+    # 返回一个强制刷新的页面
+    return f"""
+    <html>
+    <head>
+        <title>缓存已清除</title>
+        <meta http-equiv="refresh" content="2;url={url_for('dashboard')}">
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+        <meta http-equiv="Pragma" content="no-cache">
+        <meta http-equiv="Expires" content="0">
+    </head>
+    <body>
+        <h2>缓存已清除</h2>
+        <p>正在重定向到dashboard...</p>
+        <p>如果没有自动跳转，请<a href="{url_for('dashboard')}">点击这里</a></p>
+
+        <h3>支持任意有效的IATA城市代码</h3>
+        <p>当前有数据的城市数量：{len(all_flights_data)}</p>
+    </body>
+    </html>
+    """
+
+# ---- 用户认证路由 ----
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """用户登录"""
+    if current_user.is_authenticated:
+        flash(f'您已经登录为 {current_user.username}', 'info')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        username_or_email = request.form.get('username_or_email', '').strip()
+        password = request.form.get('password', '')
+
+        if not username_or_email or not password:
+            flash('请输入用户名/邮箱和密码', 'error')
+            return render_template('login.html')
+
+        # 查找用户
+        user = None
+        if '@' in username_or_email:
+            user = User.query.filter_by(email=username_or_email.lower()).first()
+        else:
+            user = User.query.filter_by(username=username_or_email).first()
+
+        if not user or not user.check_password(password):
+            flash('用户名/邮箱或密码错误', 'error')
+            return render_template('login.html')
+
+        if not user.is_active:
+            flash('账户已被禁用，请联系管理员', 'error')
+            return render_template('login.html')
+
+        # 登录用户
+        from flask_login import login_user
+        login_user(user, remember=request.form.get('remember_me'))
+        user.last_login = datetime.datetime.now(datetime.timezone.utc)
+        db.session.commit()
+
+        flash(f'欢迎回来，{user.username}！', 'success')
+        next_page = request.args.get('next')
+        if not next_page or not next_page.startswith('/'):
+            next_page = url_for('dashboard')
+        return redirect(next_page)
+
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """用户注册"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        invite_code = request.form.get('invite_code', '').strip()
+
+        # 验证输入
+        errors = []
+
+        if not username or len(username) < 3:
+            errors.append('用户名至少3位')
+        elif User.query.filter_by(username=username).first():
+            errors.append('用户名已存在')
+
+        if not email or '@' not in email:
+            errors.append('请输入有效邮箱')
+        elif User.query.filter_by(email=email).first():
+            errors.append('邮箱已被注册')
+
+        if not password or len(password) < 6:
+            errors.append('密码至少6位')
+
+        if password != confirm_password:
+            errors.append('两次输入的密码不一致')
+
+        if not invite_code:
+            errors.append('邀请码不能为空')
+        else:
+            code_obj = InviteCode.query.filter_by(code=invite_code).first()
+            if not code_obj or not code_obj.is_valid():
+                errors.append('邀请码无效或已过期')
+
+        if errors:
+            for error in errors:
+                flash(error, 'error')
+            return render_template('register.html')
+
+        try:
+            # 创建用户
+            user = User(username=username, email=email)
+            user.set_password(password)
+            db.session.add(user)
+            db.session.flush()
+
+            # 使用邀请码
+            code_obj.use_code(user.id)
+            db.session.commit()
+
+            # 自动登录
+            from flask_login import login_user
+            login_user(user)
+            user.last_login = datetime.datetime.now(datetime.timezone.utc)
+            db.session.commit()
+
+            flash('注册成功，欢迎使用Ticketradar！', 'success')
+            return redirect(url_for('dashboard'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'注册失败：{str(e)}', 'error')
+            return render_template('register.html')
+
+    return render_template('register.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    """用户登出"""
+    from flask_login import logout_user
+    username = current_user.username
+    logout_user()
+    flash(f'再见，{username}！', 'info')
+    return redirect(url_for('index'))
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    """用户仪表板"""
+    # 获取用户的监控任务（限制为一个）
+    user_task = MonitorTask.query.filter_by(user_id=current_user.id).first()
+    if user_task:
+        print(f"🔍 Dashboard: {user_task.departure_city} → 所有目的地 (阈值: ¥{user_task.price_threshold})")
+
+    # 如果用户有监控任务，获取对应的机票数据
+    task_flights = []
+    task_stats = {}
+    if user_task:
+        # 使用departure_city作为键（存储的是城市代码如'HKG'）
+        departure_code = user_task.departure_city
+
+        # 如果用户指定了目的地，需要使用特定的API请求
+        if user_task.destination_city and user_task.destination_city.strip():
+            try:
+                print(f"🔍 Dashboard: 用户指定了目的地 {user_task.destination_city}")
+                print(f"🔍 Dashboard: 获取 {get_city_display_name(departure_code)} 到 {user_task.destination_city} 的特定航班数据...")
+
+                # 使用用户任务的具体日期
+                depart_date_str = user_task.depart_date.strftime('%Y-%m-%d')
+                return_date_str = user_task.return_date.strftime('%Y-%m-%d') if user_task.return_date else None
+                print(f"🔍 Dashboard: 使用日期 {depart_date_str} → {return_date_str}")
+
+                # 使用新的FlightListSearchSSE接口
+                print(f"🔍 Dashboard: 使用FlightListSearchSSE接口获取特定航线数据")
+                task_payload = create_flight_list_payload(
+                    departure_code=departure_code,
+                    destination_code=user_task.destination_city,
+                    depart_date=depart_date_str,
+                    return_date=return_date_str
+                )
+
+                # 使用Session管理Cookie并简化headers
+                response = fetch_flights_with_session(departure_code, user_task.destination_city, depart_date_str, task_payload)
+                response.raise_for_status()
+
+                # 解析SSE响应
+                response_data = parse_sse_response(response)
+
+                if response_data:
+                    # 使用新的FlightListSearchSSE响应解析函数
+                    cleaned_data = parse_flight_list_response(response_data)
+                else:
+                    cleaned_data = []
+
+                if cleaned_data:
+                    # 直接使用清洗后的数据，因为API请求已经是特定目的地的
+                    task_flights = cleaned_data
+                    print(f"🔍 找到 {len(task_flights)} 个{user_task.destination_city}航班")
+                    flash(f'已获取 {get_city_display_name(departure_code)} 到 {user_task.destination_city} 的最新航班数据', 'success')
+                else:
+                    task_flights = []
+                    flash(f'未找到 {get_city_display_name(departure_code)} 到 {user_task.destination_city} 的航班数据', 'warning')
+
+            except Exception as e:
+                print(f"🔍 获取特定目的地航班数据失败: {e}")
+                task_flights = []
+                flash(f'获取 {get_city_display_name(departure_code)} 到 {user_task.destination_city} 航班数据失败，请稍后重试', 'warning')
+        else:
+            # 如果没有指定目的地，使用缓存的数据或动态获取所有目的地数据
+            if departure_code in all_flights_data:
+                # 获取对应始发地的机票数据
+                task_flights = all_flights_data.get(departure_code, [])
+            else:
+                # 如果没有缓存数据，尝试动态获取
+                try:
+                    print(f"Dashboard: 获取 {departure_code} 航班数据")
+                    task_flights = fetch_flights_for_city(departure_code)
+                    # 将数据缓存到all_flights_data中
+                    all_flights_data[departure_code] = task_flights
+                    flash(f'已为您获取 {get_city_display_name(departure_code)} 的最新航班数据', 'success')
+                except Exception as e:
+                    print(f"Dashboard: 获取航班数据失败: {e}")
+                    task_flights = []
+                    flash(f'获取 {get_city_display_name(departure_code)} 航班数据失败，请稍后重试', 'warning')
+
+        # 过滤低于阈值的机票并计算统计信息
+        if task_flights:
+            low_price_flights = [f for f in task_flights if f.get('价格', 0) <= user_task.price_threshold]
+
+            # 统计信息（基于完整数据）
+            task_stats = {
+                'total_flights': len(task_flights),
+                'low_price_count': len(low_price_flights),
+                'min_price': min([f.get('价格', 0) for f in task_flights]) if task_flights else 0,
+                'departure_city_name': get_city_display_name(departure_code)
+            }
+
+            # 只显示前9个机票（简化版）
+            task_flights = task_flights[:9]
+
+    # 简化的调试输出
+    if task_flights:
+        print(f"Dashboard: 显示 {len(task_flights)} 个航班")
+
+    return render_template('dashboard.html',
+                         user=current_user,
+                         task=user_task,
+                         flights=task_flights,
+                         stats=task_stats,
+                         last_update=last_update_time)
+
+# ---- 管理员功能 ----
+@app.route('/admin')
+@login_required
+def admin():
+    """管理员页面"""
+    if not current_user.is_admin:
+        flash('需要管理员权限', 'error')
+        return redirect(url_for('index'))
+
+    # 统计信息
+    stats = {
+        'total_users': User.query.count(),
+        'active_users': User.query.filter_by(is_active=True).count(),
+        'total_tasks': MonitorTask.query.count(),
+        'active_tasks': MonitorTask.query.filter_by(is_active=True).count(),
+        'total_invites': InviteCode.query.count(),
+        'active_invites': InviteCode.query.filter_by(is_active=True).count()
+    }
+
+    # 最近的邀请码
+    recent_codes = InviteCode.query.order_by(InviteCode.created_at.desc()).limit(10).all()
+
+    return render_template('admin.html', stats=stats, recent_codes=recent_codes)
+
+@app.route('/admin/generate-invite', methods=['POST'])
+@login_required
+def generate_invite():
+    """生成邀请码"""
+    if not current_user.is_admin:
+        flash('需要管理员权限', 'error')
+        return redirect(url_for('index'))
+
+    count = int(request.form.get('count', 1))
+    expires_days = request.form.get('expires_days', '')
+
+    if count < 1 or count > 50:
+        flash('生成数量必须在1-50之间', 'error')
+        return redirect(url_for('admin'))
+
+    expires_at = None
+    if expires_days:
+        try:
+            days = int(expires_days)
+            if days > 0:
+                expires_at = datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=days)
+        except ValueError:
+            flash('过期天数必须是正整数', 'error')
+            return redirect(url_for('admin'))
+
+    try:
+        generated_codes = []
+        for _ in range(count):
+            code = InviteCode(
+                code=InviteCode.generate_code(),
+                created_by=current_user.id,
+                expires_at=expires_at
+            )
+            db.session.add(code)
+            generated_codes.append(code.code)
+
+        db.session.commit()
+        flash(f'成功生成 {count} 个邀请码', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f'生成失败：{str(e)}', 'error')
+
+    return redirect(url_for('admin'))
+
+# ---- 监控任务管理 ----
+@app.route('/create-task', methods=['POST'])
+@login_required
+def create_task():
+    """创建监控任务"""
+    # 检查用户是否已有监控任务
+    existing_task = MonitorTask.query.filter_by(user_id=current_user.id).first()
+    if existing_task:
+        flash('您已经有一个监控任务，请先删除现有任务再创建新的', 'error')
+        return redirect(url_for('dashboard'))
+
+    departure_city = request.form.get('departure_city', '').strip().upper()  # 转换为大写
+    depart_date = request.form.get('depart_date', '')
+    return_date = request.form.get('return_date', '')
+    price_threshold = request.form.get('price_threshold', 1000)
+    pushplus_token = request.form.get('pushplus_token', '').strip()
+
+    # 验证输入
+    errors = []
+
+    if not departure_city:
+        errors.append('请输入出发城市代码')
+    elif len(departure_city) != 3 or not departure_city.isalpha():
+        errors.append('出发城市代码必须是3位字母，如：BJS、SHA、CAN、SZX等')
+
+
+
+    if not depart_date:
+        errors.append('请选择出发日期')
+    else:
+        try:
+            depart_date_obj = datetime.datetime.strptime(depart_date, '%Y-%m-%d').date()
+            if depart_date_obj <= datetime.datetime.now().date():
+                errors.append('出发日期必须是未来日期')
+        except ValueError:
+            errors.append('出发日期格式错误')
+
+    return_date_obj = None
+    if return_date:
+        try:
+            return_date_obj = datetime.datetime.strptime(return_date, '%Y-%m-%d').date()
+            if return_date_obj <= depart_date_obj:
+                errors.append('返程日期必须晚于出发日期')
+        except ValueError:
+            errors.append('返程日期格式错误')
+
+    try:
+        price_threshold = float(price_threshold)
+        if price_threshold < 100:
+            errors.append('价格阈值不能低于100元')
+    except ValueError:
+        errors.append('价格阈值必须是数字')
+
+    if errors:
+        for error in errors:
+            flash(error, 'error')
+        return redirect(url_for('dashboard'))
+
+    try:
+        # 自动生成任务名称
+        trip_type_text = '往返' if return_date_obj else '单程'
+        task_name = f"{departure_city}→所有目的地监控({trip_type_text})"
+
+        # 创建监控任务（只监控所有目的地）
+        task = MonitorTask(
+            user_id=current_user.id,
+            name=task_name,
+            departure_city=departure_city,  # 直接使用用户输入的代码
+            departure_code=departure_city,
+            destination_city=None,  # 固定为None，只监控所有目的地
+            depart_date=depart_date_obj,
+            return_date=return_date_obj,
+            trip_type='round_trip' if return_date_obj else 'one_way',
+            price_threshold=price_threshold,
+            pushplus_token=pushplus_token if pushplus_token else None
+        )
+
+        db.session.add(task)
+        db.session.commit()
+
+        flash('监控任务创建成功！', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f'创建失败：{str(e)}', 'error')
+
+    return redirect(url_for('dashboard'))
+
+@app.route('/edit-task/<int:task_id>', methods=['GET', 'POST'])
+@login_required
+def edit_task(task_id):
+    """编辑监控任务"""
+    task = MonitorTask.query.filter_by(id=task_id, user_id=current_user.id).first()
+    if not task:
+        flash('任务不存在或无权限访问', 'error')
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'GET':
+        # 返回任务数据用于编辑表单
+        return jsonify({
+            'id': task.id,
+            'name': task.name,
+            'departure_city': task.departure_city,
+            'depart_date': task.depart_date.strftime('%Y-%m-%d'),
+            'return_date': task.return_date.strftime('%Y-%m-%d') if task.return_date else '',
+            'price_threshold': task.price_threshold,
+            'pushplus_token': task.pushplus_token or ''
+        })
+
+    # POST 请求 - 更新任务
+    departure_city = request.form.get('departure_city', '').strip().upper()
+    depart_date = request.form.get('depart_date', '')
+    return_date = request.form.get('return_date', '')
+    price_threshold = request.form.get('price_threshold', 1000)
+    pushplus_token = request.form.get('pushplus_token', '').strip()
+
+    # 验证输入（复用创建任务的验证逻辑）
+    errors = []
+
+    if not departure_city:
+        errors.append('请输入出发城市代码')
+    elif len(departure_city) != 3 or not departure_city.isalpha():
+        errors.append('出发城市代码必须是3位字母，如：BJS、SHA、CAN、SZX等')
+
+
+
+    if not depart_date:
+        errors.append('请选择出发日期')
+    else:
+        try:
+            depart_date_obj = datetime.datetime.strptime(depart_date, '%Y-%m-%d').date()
+            if depart_date_obj <= datetime.datetime.now().date():
+                errors.append('出发日期必须是未来日期')
+        except ValueError:
+            errors.append('出发日期格式错误')
+
+    return_date_obj = None
+    if return_date:
+        try:
+            return_date_obj = datetime.datetime.strptime(return_date, '%Y-%m-%d').date()
+            if return_date_obj <= depart_date_obj:
+                errors.append('返程日期必须晚于出发日期')
+        except ValueError:
+            errors.append('返程日期格式错误')
+
+    try:
+        price_threshold = float(price_threshold)
+        if price_threshold < 100:
+            errors.append('价格阈值不能低于100元')
+    except ValueError:
+        errors.append('价格阈值必须是数字')
+
+    if errors:
+        for error in errors:
+            flash(error, 'error')
+        return redirect(url_for('dashboard'))
+
+    try:
+        # 自动生成任务名称
+        trip_type_text = '往返' if return_date_obj else '单程'
+        task_name = f"{departure_city}→所有目的地监控({trip_type_text})"
+
+        # 更新任务（只监控所有目的地）
+        task.name = task_name
+        task.departure_city = departure_city
+        task.departure_code = departure_city
+        task.destination_city = None  # 固定为None，只监控所有目的地
+        task.depart_date = depart_date_obj
+        task.return_date = return_date_obj
+        task.trip_type = 'round_trip' if return_date_obj else 'one_way'
+        task.price_threshold = price_threshold
+        task.pushplus_token = pushplus_token if pushplus_token else None
+
+        db.session.commit()
+        flash('监控任务更新成功！', 'success')
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f'更新失败：{str(e)}', 'error')
+
+    return redirect(url_for('dashboard'))
+
+@app.route('/toggle-task/<int:task_id>', methods=['POST'])
+@login_required
+def toggle_task(task_id):
+    """切换任务状态（启动/暂停）"""
+    task = MonitorTask.query.filter_by(id=task_id, user_id=current_user.id).first()
+    if not task:
+        return jsonify({'success': False, 'message': '任务不存在或无权限访问'})
+
+    try:
+        task.is_active = not task.is_active
+        db.session.commit()
+
+        status = '启动' if task.is_active else '暂停'
+        return jsonify({
+            'success': True,
+            'message': f'任务已{status}',
+            'is_active': task.is_active
+        })
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'操作失败：{str(e)}'})
+
+@app.route('/delete-task/<int:task_id>', methods=['POST', 'DELETE'])
+@login_required
+def delete_task(task_id):
+    """删除监控任务"""
+    task = MonitorTask.query.filter_by(id=task_id, user_id=current_user.id).first()
+    if not task:
+        return jsonify({'success': False, 'message': '任务不存在或无权限访问'})
+
+    try:
+        db.session.delete(task)
+        db.session.commit()
+        return jsonify({'success': True, 'message': '任务删除成功'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'删除失败：{str(e)}'})
+
+# ---- 数据库初始化 ----
+def init_database():
+    """初始化数据库"""
+    with app.app_context():
+        db.create_all()
+
+        # 检查是否已有管理员用户
+        admin_user = User.query.filter_by(is_admin=True).first()
+        if not admin_user:
+            print("未找到管理员用户，请手动创建管理员账户")
+        else:
+            print(f"数据库已存在管理员用户: {admin_user.username} ({admin_user.email})")
 
 # ---- 更新数据函数 ----
 def update_web_data(df, international_top_df, departure_code=None):
@@ -833,6 +2015,10 @@ def update_web_data(df, international_top_df, departure_code=None):
     # 只需满足国家不是中国
     international_full_df = df[df['国家'] != '中國']
 
+    # 确保始发地在app_stats中存在
+    if departure_code not in app_stats:
+        app_stats[departure_code] = {'total': 0, 'low_price': 0, 'min_price': 0}
+
     # 更新对应始发地的统计信息
     app_stats[departure_code]['total'] = len(international_full_df)
     app_stats[departure_code]['low_price'] = len(international_full_df[international_full_df['价格'] < app_settings['price_threshold']])
@@ -840,7 +2026,7 @@ def update_web_data(df, international_top_df, departure_code=None):
 
     # 不再保存CSV文件
 
-    print(f"Web数据已更新，始发地: {departure_cities.get(departure_code, departure_code)}，展示了{len(flight_records)}条Top境外记录，总境外目的地共{app_stats[departure_code]['total']}条")
+    print(f"Web数据已更新，始发地: {get_city_display_name(departure_code)}，展示了{len(flight_records)}条Top境外记录，总境外目的地共{app_stats[departure_code]['total']}条")
 
 # ---- 根据始发地更新payload ----
 def update_payload_for_departure(departure_code):
@@ -880,7 +2066,517 @@ def update_payload_for_departure(departure_code):
 
     return updated_payload
 
+# ---- 为用户监控任务创建特定的payload ----
+def create_payload_for_user_task(departure_code, destination_code=None, depart_date=None, return_date=None):
+    """为用户监控任务创建特定的payload"""
+    # 复制原始payload
+    updated_payload = copy.deepcopy(payload)
 
+    # 更新始发地
+    if 'segments' in updated_payload and len(updated_payload['segments']) > 0:
+        if 'dcs' in updated_payload['segments'][0] and len(updated_payload['segments'][0]['dcs']) > 0:
+            updated_payload['segments'][0]['dcs'][0]['code'] = departure_code
+
+        # 更新目的地
+        if destination_code:
+            # 如果指定了目的地，使用具体的城市代码
+            updated_payload['segments'][0]['acs'] = [{"ct": 1, "code": destination_code}]
+        else:
+            # 如果没有指定目的地，使用原始的区域代码（搜索所有目的地）
+            updated_payload['segments'][0]['acs'] = [{"ct": 6, "code": "bd_49_29"}]
+
+        # 更新出发日期
+        if 'drl' in updated_payload['segments'][0] and len(updated_payload['segments'][0]['drl']) > 0:
+            depart_date_str = depart_date or app_settings['depart_date']
+            updated_payload['segments'][0]['drl'][0]['begin'] = depart_date_str
+            updated_payload['segments'][0]['drl'][0]['end'] = depart_date_str
+
+        # 更新返程日期
+        if 'rdrl' in updated_payload['segments'][0] and len(updated_payload['segments'][0]['rdrl']) > 0:
+            return_date_str = return_date or app_settings['return_date']
+            updated_payload['segments'][0]['rdrl'][0]['begin'] = return_date_str
+            updated_payload['segments'][0]['rdrl'][0]['end'] = return_date_str
+
+    # 更新transactionId，使用当前时间戳
+    current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    transaction_id = f"1-mf-{current_time}-WEB"
+    updated_payload['transactionId'] = transaction_id
+
+    # 更新head中的相关字段
+    if 'head' in updated_payload and 'extension' in updated_payload['head']:
+        for item in updated_payload['head']['extension']:
+            if item.get('name') == 'flt_app_session_transactionId':
+                item['value'] = transaction_id
+            elif item.get('name') == 'clientTime':
+                item['value'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S+08:00")
+
+    return updated_payload
+
+def create_flight_list_payload(departure_code, destination_code, depart_date, return_date=None):
+    """为指定目的地的监控任务创建FlightListSearchSSE接口的payload"""
+    import datetime
+
+    print(f"🔍 Dashboard: 创建FlightListSearchSSE payload - {departure_code} → {destination_code}")
+
+    # 生成当前时间相关的值
+    current_time = datetime.datetime.now()
+    transaction_id = f"1-mf-{current_time.strftime('%Y%m%d%H%M%S')}-WEB"
+    client_time = current_time.strftime("%Y-%m-%dT%H:%M:%S+08:00")
+
+    # 构建新接口的payload
+    flight_list_payload = {
+        "mode": 0,
+        "searchCriteria": {
+            "grade": 3,
+            "tripType": 1,  # 1=单程, 2=往返
+            "journeyNo": 1,
+            "passengerInfoType": {
+                "adultCount": 1,
+                "childCount": 0,
+                "infantCount": 0
+            },
+            "journeyInfoTypes": [
+                {
+                    "journeyNo": 1,
+                    "departDate": depart_date,
+                    "departCode": departure_code,
+                    "arriveCode": destination_code,
+                    "departAirport": "",
+                    "arriveAirport": ""
+                }
+            ],
+            "policyId": None
+        },
+        "sortInfoType": {
+            "direction": True,
+            "orderBy": "Direct",  # 改为按直飞排序
+            "topList": []
+        },
+        "tagList": [],
+        "flagList": [],
+        "filterType": {
+            "filterFlagTypes": [
+                {
+                    "flag": "Direct",
+                    "allow": True,
+                    "journeyNoList": [1],
+                    "memory": True  # 关键字段：记住直飞过滤设置
+                }
+            ],
+            "queryItemSettings": [],
+            "studentsSelectedStatus": True
+        },
+        "abtList": [
+            {
+                "abCode": "240509_IBU_RFUO",
+                "abVersion": "A"
+            }
+        ],
+        "head": {
+            "cid": "09034048218003791614",
+            "ctok": "",
+            "cver": "3",
+            "lang": "01",
+            "sid": "8888",
+            "syscode": "40",
+            "auth": "",
+            "xsid": "",
+            "extension": [
+                {"name": "abTesting", "value": "M:71,240723_IBU_OLPS:B;M:0,250520_IBU_FPG:B;M:2,250421_IBU_snth:B;M:34,250430_IBU_ais:A;M:34,250430_IBU_ais:A;M:7,240308_IBU_olrp:B;M:6,240417_IBU_Ohtwl:A;M:28,240912_IBU_jpwjo:A;M:-1,240924_IBU_uspoe:A;M:-1,240509_IBU_RFUO:A;M:-1,240924_IBU_usphe:A;M:76,241128_IBU_uspso:A;M:94,241128_IBU_usphs:A;M:80,241031_IBU_OLFL:F;M:44,241224_IBU_TOLNG:B;M:46,250109_IBU_OLFBO:E;M:46,250109_IBU_OLFBO:E;M:95,250206_IBU_sxbjo:A;M:9,250219_IBU_OLLIST:A;M:9,250219_IBU_OLLIST:A;M:21,250207_IBU_FLTOLM:E;M:21,250207_IBU_FLTOLM:E;M:41,250305_IBU_sxxw:B;M:7,250313_IBU_GWBVO:B;M:82,250403_IBU_wcd:D;M:43,250423_IBU_olm:B;M:95,250403_IBU_PDOOL:D;M:43,250408_IBU_fltollogin:A;M:0,250417_IBU_olf:A;M:93,250515_IBU_plbb:A;M:68,250527_IBU_lsf:A;M:37,250521_IBU_ONCOPR:A;"},
+                {"name": "source", "value": "ONLINE"},
+                {"name": "sotpGroup", "value": "Trip"},
+                {"name": "sotpLocale", "value": "zh-HK"},
+                {"name": "sotpCurrency", "value": "CNY"},
+                {"name": "allianceID", "value": "1094387"},
+                {"name": "sid", "value": "2209817"},
+                {"name": "ouid", "value": "ctag.hash.od66w3zbknse"},
+                {"name": "uuid", "value": ""},
+                {"name": "useDistributionType", "value": "1"},
+                {"name": "flt_app_session_transactionId", "value": transaction_id},
+                {"name": "vid", "value": "1746708309569.1d384rgx2qT7"},
+                {"name": "pvid", "value": "13"},
+                {"name": "Flt_SessionId", "value": "22"},
+                {"name": "channel", "value": ""},
+                {"name": "x-ua", "value": "v=3_os=ONLINE_osv=10"},
+                {"name": "PageId", "value": "10320667452"},
+                {"name": "clientTime", "value": client_time},
+                {"name": "edmSource", "value": "undefined"},
+                {"name": "LowPriceSource", "value": "historySearch"},
+                {"name": "Flt_BatchId", "value": "e203cd39-acf5-4bbd-ab78-9a86f5a69261"},
+                {"name": "BlockTokenTimeout", "value": "0"},
+                {"name": "full_link_time_scene", "value": "pure_list_page"},
+                {"name": "units", "value": "METRIC"},
+                {"name": "sotpUnit", "value": "METRIC"}
+            ],
+            "Locale": "zh-HK",
+            "Language": "hk",
+            "Currency": "CNY",
+            "ClientID": "",
+            "appid": "700020"
+        }
+    }
+
+    # 如果是往返票，添加返程信息
+    if return_date:
+        flight_list_payload["searchCriteria"]["tripType"] = 2  # 往返
+        flight_list_payload["searchCriteria"]["journeyInfoTypes"].append({
+            "journeyNo": 2,
+            "departDate": return_date,
+            "departCode": destination_code,
+            "arriveCode": departure_code,
+            "departAirport": "",
+            "arriveAirport": ""
+        })
+        print(f"🔍 设置为往返票: 返程 {return_date}")
+
+    # 简化的payload信息
+    trip_type_text = '往返' if flight_list_payload['searchCriteria']['tripType'] == 2 else '单程'
+    print(f"🔍 创建payload: {flight_list_payload['searchCriteria']['journeyInfoTypes'][0]['departCode']} → {flight_list_payload['searchCriteria']['journeyInfoTypes'][0]['arriveCode']} ({trip_type_text})")
+
+    return flight_list_payload
+
+def parse_sse_response(response):
+    """解析SSE流响应，提取JSON数据"""
+
+    try:
+        json_data_list = []
+        current_event_data_lines = []
+
+        # 解析SSE流
+        for line_bytes in response.iter_lines():
+            if not line_bytes:
+                # 空行表示一个事件结束
+                if current_event_data_lines:
+                    process_sse_event(current_event_data_lines, json_data_list)
+                    current_event_data_lines = []
+                continue
+
+            line = line_bytes.decode('utf-8').strip()
+
+            if line.startswith("data:"):
+                data_content = line[len("data:"):].strip()
+                if data_content:
+                    current_event_data_lines.append(data_content)
+
+        # 处理最后一个事件
+        if current_event_data_lines:
+            process_sse_event(current_event_data_lines, json_data_list)
+
+        # 返回结果
+        if json_data_list:
+            selected_block = json_data_list[0]
+            total_flights = len(selected_block.get("itineraryList", []))
+            print(f"✅ 获得 {total_flights} 个航班数据")
+            return selected_block
+        else:
+            print(f"⚠️ 未获得有效航班数据")
+            return None
+
+    except Exception as e:
+        print(f"❌ SSE解析失败: {e}")
+        return None
+
+def process_sse_event(data_lines, json_data_list):
+    """处理单个SSE事件"""
+    import json
+
+    if not data_lines:
+        return
+
+    # 将多行data内容合并
+    full_data_str = "".join(data_lines)
+
+    try:
+        json_object = json.loads(full_data_str)
+
+        # 检查是否包含航班数据
+        if "itineraryList" in json_object or "basicInfo" in json_object:
+            json_data_list.append(json_object)
+
+    except json.JSONDecodeError:
+        pass  # 忽略解析失败的数据
+    except Exception:
+        pass  # 忽略其他错误
+
+def merge_multiple_sse_blocks(json_data_list):
+    """合并多个SSE JSON块的航班数据"""
+    try:
+        if not json_data_list:
+            return None
+
+        # 使用第一个块作为基础模板
+        merged_data = json_data_list[0].copy()
+        merged_itinerary_list = []
+
+        # 合并所有块的itineraryList
+        total_itineraries = 0
+        for i, json_block in enumerate(json_data_list):
+            block_itineraries = json_block.get("itineraryList", [])
+            merged_itinerary_list.extend(block_itineraries)
+            total_itineraries += len(block_itineraries)
+            print(f"🔍 DEBUG: 合并第 {i+1} 个块，包含 {len(block_itineraries)} 个行程")
+
+        # 更新合并后的数据
+        merged_data["itineraryList"] = merged_itinerary_list
+
+        print(f"🔍 DEBUG: 合并完成，总共 {total_itineraries} 个行程")
+        return merged_data
+
+    except Exception as e:
+        print(f"🔍 DEBUG: 合并SSE块时出错: {e}")
+        # 如果合并失败，返回第一个块
+        return json_data_list[0] if json_data_list else None
+
+def fallback_parse_response(response):
+    """回退解析方案：尝试直接解析响应文本"""
+    import json
+
+    print(f"🔍 Dashboard: 未找到标准SSE格式，尝试回退解析...")
+
+    try:
+        response_text = response.text
+        print(f"🔍 Dashboard: 响应文本长度: {len(response_text)}")
+
+        if not response_text.strip():
+            print(f"🔍 Dashboard: 响应文本为空")
+            return None
+
+        # 尝试直接解析为JSON
+        try:
+            return json.loads(response_text)
+        except json.JSONDecodeError:
+            print(f"🔍 Dashboard: 响应文本不是有效JSON")
+
+            # 尝试查找JSON片段
+            if '{' in response_text and '}' in response_text:
+                start_idx = response_text.find('{')
+                end_idx = response_text.rfind('}') + 1
+                json_fragment = response_text[start_idx:end_idx]
+
+                try:
+                    return json.loads(json_fragment)
+                except json.JSONDecodeError:
+                    print(f"🔍 Dashboard: JSON片段也无法解析")
+
+            # 显示响应内容用于调试
+            print(f"🔍 Dashboard: 响应文本前500字符:")
+            print(f"{response_text[:500]}")
+
+            return None
+
+    except Exception as e:
+        print(f"🔍 Dashboard: 回退解析失败: {e}")
+        return None
+
+def parse_flight_list_response(response_data):
+    """解析FlightListSearchSSE接口的响应数据"""
+    try:
+        if not isinstance(response_data, dict):
+            return []
+
+        flights = []
+
+        # 预处理：创建航空公司代码到名称的映射
+        airline_mapping = {
+            item.get("code"): item.get("name")
+            for item in response_data.get("airlineList", [])
+            if item.get("code") and item.get("name")
+        }
+
+        # 提取全局信息
+        basic_info = response_data.get("basicInfo", {})
+        search_currency = basic_info.get("currency", "CNY")
+        product_id_for_links = basic_info.get("productId")
+
+        # 获取搜索的目的地城市名称
+        search_destination_city_name = None
+        search_journeys = basic_info.get("searchCondition", {}).get("searchJourneys", [])
+        if search_journeys and isinstance(search_journeys, list) and len(search_journeys) > 0:
+            arrive_city_info = search_journeys[0].get("arriveCity", {})
+            search_destination_city_name = arrive_city_info.get("name")
+
+        # 遍历行程列表
+        itinerary_list = response_data.get("itineraryList", [])
+
+        # 如果没有航班数据，尝试从filterOptionList构造
+        if len(itinerary_list) == 0:
+            if "filterOptionList" in response_data and response_data["filterOptionList"]:
+                filter_options = response_data["filterOptionList"][0]
+                if "hotFilters" in filter_options:
+                    hot_filters = filter_options["hotFilters"]
+                    for hot_filter in hot_filters:
+                        if hot_filter.get("type") == "DIRECT":
+                            direct_price = hot_filter.get("lowestPrice", 0)
+                            if direct_price > 0 and search_journeys:
+                                journey = search_journeys[0]
+                                depart_city = journey.get("departCity", {})
+                                arrive_city = journey.get("arriveCity", {})
+                                depart_date = journey.get("departDate", "")
+
+                                # 构建直飞航班的预订链接
+                                depart_city_code = depart_city.get("code", "").lower()
+                                arrive_city_code = arrive_city.get("code", "").lower()
+                                direct_booking_link = f"{base_url}/flights/showfarefirst?dcity={depart_city_code}&acity={arrive_city_code}&ddate={depart_date}&triptype=ow&class=y&quantity=1&nonstoponly=on&locale=zh-HK&curr=CNY"
+
+                                flight_info = {
+                                    '目的地': arrive_city.get("name", ""),
+                                    '目的地代码': arrive_city.get("code", ""),
+                                    '价格': direct_price,
+                                    '货币': basic_info.get("currency", "CNY"),
+                                    '出发日期': depart_date,
+                                    '航空公司': "直飞航班",
+                                    '航班号': "查看详情",
+                                    '飞行时长': "查看详情",
+                                    '出发时间': "查看详情",
+                                    '到达时间': "查看详情",
+                                    '完整出发时间': "",
+                                    '完整到达时间': "",
+                                    '中转次数': 0,
+                                    '航班详情': f"直飞航班 ¥{direct_price}",
+                                    '链接': direct_booking_link
+                                }
+                                flights.append(flight_info)
+
+        # 处理实际的航班列表
+        for idx, itinerary_item in enumerate(itinerary_list):
+            try:
+                # 定位到单个行程的主要数据结构
+                journey = itinerary_item.get("journeyList", [{}])[0]
+                policy = itinerary_item.get("policies", [{}])[0]
+
+                # 如果 journey 或 policy 为空字典，则跳过
+                if not journey or not policy:
+                    continue
+
+                trans_sections = journey.get("transSectionList", [])
+                if not trans_sections:
+                    continue
+
+                first_segment = trans_sections[0]
+                last_segment = trans_sections[-1]
+
+                # 1. 价格和货币
+                price_info = policy.get("price", {})
+                price = price_info.get("totalPrice", 0)
+
+                # 2. 时间信息
+                departure_datetime_str = first_segment.get("departDateTime", "")
+                arrival_datetime_str = last_segment.get("arriveDateTime", "")
+                departure_date = departure_datetime_str.split(" ")[0] if departure_datetime_str else ""
+
+                # 3. 航班详情
+                airline_names = []
+                flight_numbers = []
+                for segment in trans_sections:
+                    flight_info = segment.get("flightInfo", {})
+                    airline_code = flight_info.get("airlineCode")
+                    flight_no = flight_info.get("flightNo")
+
+                    if airline_code:
+                        airline_names.append(airline_mapping.get(airline_code, airline_code))
+                    if flight_no:
+                        flight_numbers.append(flight_no)
+
+                # 去重航空公司名称
+                airline_names = list(dict.fromkeys(airline_names))
+
+                # 计算飞行时长
+                total_duration_minutes = journey.get("duration")
+                total_duration_readable = ""
+                if total_duration_minutes is not None:
+                    hours = total_duration_minutes // 60
+                    minutes = total_duration_minutes % 60
+                    total_duration_readable = f"{hours}h{minutes}m"
+
+                # 目的地信息
+                final_arrival_airport_code = last_segment.get("arrivePoint", {}).get("airportCode", "")
+
+                # 4. 链接信息组件
+                policy_id_for_links = policy.get("policyId")
+
+                # 构建正确的Trip.com预订链接
+                booking_link = ""
+                if policy_id_for_links and product_id_for_links:
+                    # 使用Trip.com的标准预订链接格式
+                    booking_link = f"{base_url}/flights/booking/{policy_id_for_links}?productId={product_id_for_links}"
+                elif policy_id_for_links:
+                    # 如果只有policyId，使用简化链接
+                    booking_link = f"{base_url}/flights/booking/{policy_id_for_links}"
+                else:
+                    # 如果没有具体的预订ID，构建搜索链接
+                    search_journeys = basic_info.get("searchCondition", {}).get("searchJourneys", [])
+                    if search_journeys:
+                        journey = search_journeys[0]
+                        depart_city = journey.get("departCity", {}).get("code", "")
+                        arrive_city = journey.get("arriveCity", {}).get("code", "")
+                        depart_date = journey.get("departDate", "")
+                        if depart_city and arrive_city and depart_date:
+                            booking_link = f"{base_url}/flights/showfarefirst?dcity={depart_city.lower()}&acity={arrive_city.lower()}&ddate={depart_date}&triptype=ow&class=y&quantity=1&locale=zh-HK&curr=CNY"
+
+                # 构建我们系统需要的格式 - 优化显示信息
+                flight_info = {
+                    '目的地': search_destination_city_name or "",
+                    '目的地代码': final_arrival_airport_code,
+                    '价格': price,
+                    '货币': search_currency,
+                    '出发时间': departure_datetime_str.split(" ")[1] if " " in departure_datetime_str else departure_datetime_str,
+                    '到达时间': arrival_datetime_str.split(" ")[1] if " " in arrival_datetime_str else arrival_datetime_str,
+                    '出发日期': departure_date,
+                    '航空公司': ", ".join(airline_names) if airline_names else "",
+                    '航班号': ", ".join(flight_numbers) if flight_numbers else "",
+                    '飞行时长': total_duration_readable,
+                    '完整出发时间': departure_datetime_str,  # 添加完整时间信息
+                    '完整到达时间': arrival_datetime_str,   # 添加完整时间信息
+                    '中转次数': len(trans_sections) - 1,    # 计算中转次数
+                    '航班详情': f"{', '.join(airline_names)} {', '.join(flight_numbers)}" if airline_names and flight_numbers else "",
+                    '链接': booking_link
+                }
+
+                flights.append(flight_info)
+
+            except Exception:
+                continue
+
+        print(f"✅ 解析完成: {len(flights)} 个航班")
+        return flights
+
+    except Exception as e:
+        print(f"❌ 解析响应失败: {e}")
+        return []
+
+# ---- 获取指定城市的航班数据 ----
+def fetch_flights_for_city(departure_code):
+    """获取指定城市的航班数据"""
+    try:
+        # 根据指定始发地更新payload
+        current_payload = update_payload_for_departure(departure_code)
+
+        # 发送POST请求
+        print(f"正在获取 {get_city_display_name(departure_code)} 的航班数据...")
+        response = requests.post(url, headers=headers, json=current_payload, timeout=30)
+        response.raise_for_status()
+
+        # 解析响应内容为JSON
+        response_data = response.json()
+
+        # 调用清洗函数
+        cleaned_data = clean_flight_data(response_data, base_url)
+
+        # 使用 Pandas 处理数据
+        if cleaned_data:
+            df = pd.DataFrame(cleaned_data)
+
+            # 筛选境外目的地
+            international_df = df[df['国家'] != '中國']
+
+            # 返回前12条记录
+            return international_df.head(12).to_dict('records')
+        else:
+            return []
+
+    except Exception as e:
+        print(f"获取 {get_city_display_name(departure_code)} 航班数据失败: {e}")
+        raise e
 
 # ---- 从payload提取行程信息 ----
 def extract_trip_info_from_payload(current_payload=None):
@@ -897,7 +2593,7 @@ def extract_trip_info_from_payload(current_payload=None):
                 if departure_code:
                     app_settings['departure_code'] = departure_code
                     # 根据代码设置城市名称
-                    app_settings['departure_city'] = departure_cities.get(departure_code, departure_code)
+                    app_settings['departure_city'] = get_city_display_name(departure_code)
 
         # 提取行程类型（如果payload中有更新的信息）
         if 'tt' in current_payload:
@@ -913,8 +2609,18 @@ def extract_trip_info_from_payload(current_payload=None):
 # ---- Web服务 ----
 def run_web_server():
     """运行Web服务器"""
-    print(f"启动Web服务器，端口: 38181")
-    serve(app, host='0.0.0.0', port=38181)
+    # 从环境变量读取服务器配置
+    host = os.getenv('SERVER_HOST', '0.0.0.0')
+    port = int(os.getenv('SERVER_PORT', '38181'))
+
+    print(f"启动Web服务器，地址: {host}:{port}")
+
+    # 生产环境建议
+    external_domain = os.getenv('EXTERNAL_DOMAIN')
+    if external_domain:
+        print(f"外部访问地址: {'https' if os.getenv('USE_HTTPS', 'false').lower() == 'true' else 'http'}://{external_domain}")
+
+    serve(app, host=host, port=port)
 
 # ---- 启动时推送目的地 ----
 def push_destinations_on_startup(flights_data):
@@ -966,14 +2672,21 @@ def push_destinations_on_startup(flights_data):
     send_pushplus_notification(pushplus_token, title, content, topic=topic)
 
 # ---- 启动定时任务并推送 ----
+def get_all_monitored_cities():
+    """获取主循环需要监控的城市（只包含主页的4个城市）"""
+    # 主循环只监控主页显示的4个城市
+    main_loop_cities = list(homepage_cities.keys())  # ['HKG', 'SZX', 'CAN', 'MFM']
+    print(f"主循环监控的城市: {main_loop_cities}")
+    return main_loop_cities
+
 def start_monitoring_and_push():
     """启动监控并在首次数据获取后推送，支持多个始发地"""
-    # 获取所有始发地
-    all_departures = list(departure_cities.keys())
+    # 获取所有需要监控的城市（包括用户任务）
+    monitored_cities = get_all_monitored_cities()
 
-    # 立即执行一次main函数，获取所有始发地的数据
-    for departure_code in all_departures:
-        print(f"\n开始获取始发地 {departure_cities[departure_code]} 的数据...")
+    # 立即执行一次main函数，获取所有需要监控的城市数据
+    for departure_code in monitored_cities:
+        print(f"\n开始获取始发地 {get_city_display_name(departure_code)} 的数据...")
         main(departure_code)
 
     # 检查是否获取到数据
@@ -982,12 +2695,13 @@ def start_monitoring_and_push():
         # 为每个始发地推送数据
         for departure_code, flights in all_flights_data.items():
             if flights:
-                print(f"推送始发地 {departure_cities[departure_code]} 的数据...")
+                departure_city_name = get_city_display_name(departure_code)
+                print(f"推送始发地 {departure_city_name} 的数据...")
                 # 临时设置当前始发地，以便推送时使用正确的始发地信息
                 global current_departure
                 temp_departure = current_departure
                 current_departure = departure_code
-                app_settings['departure_city'] = departure_cities[departure_code]
+                app_settings['departure_city'] = departure_city_name
                 app_settings['departure_code'] = departure_code
 
                 # 推送数据
@@ -995,20 +2709,27 @@ def start_monitoring_and_push():
 
                 # 恢复当前始发地
                 current_departure = temp_departure
-                app_settings['departure_city'] = departure_cities[temp_departure]
+                temp_departure_city_name = get_city_display_name(temp_departure)
+                app_settings['departure_city'] = temp_departure_city_name
                 app_settings['departure_code'] = temp_departure
     else:
         print("首次数据获取未能获得有效数据，无法推送")
 
-    # 设置定时任务，每隔指定时间轮询所有始发地
+    # 设置定时任务，每隔指定时间轮询所有需要监控的城市
     def check_all_departures():
-        for departure_code in all_departures:
+        # 每次执行时重新获取需要监控的城市列表
+        current_monitored_cities = get_all_monitored_cities()
+        for departure_code in current_monitored_cities:
             main(departure_code)
             # 添加短暂延迟，避免API请求过于频繁
             time.sleep(5)
 
     schedule.every(app_settings['check_interval']).minutes.do(check_all_departures)
-    print(f"已设置每{app_settings['check_interval']}分钟执行一次检测任务，轮询所有始发地")
+    print(f"已设置每{app_settings['check_interval']}分钟执行一次主循环检测任务，轮询所有始发地")
+
+    # 设置独立的用户监控任务，每7分钟执行一次
+    schedule.every(7).minutes.do(check_all_user_monitoring_tasks)
+    print("已设置每7分钟执行一次用户监控任务，独立处理个性化推送")
 
     # 持续运行定时任务
     while True:
@@ -1020,6 +2741,9 @@ if __name__ == "__main__":
     # 加载环境变量
     load_dotenv()
 
+    # 初始化数据库
+    init_database()
+
     # 更新设置
     app_settings['price_threshold'] = float(os.getenv("PRICE_THRESHOLD", "1000"))
     app_settings['check_interval'] = int(os.getenv("CHECK_INTERVAL", "5"))
@@ -1028,13 +2752,14 @@ if __name__ == "__main__":
     # 注意：current_departure是全局变量，不需要在这里使用global声明
     # 因为我们不是在函数内部
     current_departure = os.getenv("DEFAULT_DEPARTURE", "HKG")
-    if current_departure not in departure_cities:
-        print(f"警告: 默认始发地 {current_departure} 无效，使用香港(HKG)作为默认始发地")
+    # 移除城市列表检查，允许任何3位字母代码
+    if len(current_departure) != 3 or not current_departure.isalpha():
+        print(f"警告: 默认始发地 {current_departure} 格式无效，使用香港(HKG)作为默认始发地")
         current_departure = "HKG"
 
     # 设置初始始发地信息
     app_settings['departure_code'] = current_departure
-    app_settings['departure_city'] = departure_cities[current_departure]
+    app_settings['departure_city'] = get_city_display_name(current_departure)
 
     # 读取行程类型和日期信息
     trip_type_code = int(os.getenv("TRIP_TYPE", "2"))
@@ -1045,9 +2770,9 @@ if __name__ == "__main__":
 
     print(f"默认始发地设置为: {app_settings['departure_city']} ({current_departure})")
 
-    # 启动Web服务器（在新线程中）
-    web_thread = threading.Thread(target=run_web_server, daemon=True)
-    web_thread.start()
+    # 启动监控并推送（在后台线程中）
+    monitor_thread = threading.Thread(target=start_monitoring_and_push, daemon=True)
+    monitor_thread.start()
 
-    # 启动监控并推送（在主线程中）
-    start_monitoring_and_push()
+    # 启动Web服务器（在主线程中）
+    run_web_server()

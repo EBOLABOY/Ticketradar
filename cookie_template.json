@@ -1,0 +1,29 @@
+[
+  {
+    "name": "GUID",
+    "value": "09034108219101041886",
+    "domain": ".trip.com",
+    "path": "/",
+    "secure": false,
+    "httpOnly": false,
+    "expirationDate": 1893456000
+  },
+  {
+    "name": "_bfa",
+    "value": "1.1746708309569.1d384rgx2qT7.1.1748840791819.1748840834949.25.7.0",
+    "domain": ".trip.com",
+    "path": "/",
+    "secure": false,
+    "httpOnly": false,
+    "expirationDate": 1893456000
+  },
+  {
+    "name": "UBT_VID",
+    "value": "1748841554858.797eVts6bH1i",
+    "domain": ".trip.com",
+    "path": "/",
+    "secure": false,
+    "httpOnly": false,
+    "expirationDate": 1893456000
+  }
+]
