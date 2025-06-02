@@ -7,19 +7,8 @@ services:
     restart: unless-stopped
     ports:
       - "38181:38181"
-    environment:
-      - SERVER_HOST=0.0.0.0
-      - SERVER_PORT=38181
-      - SECRET_KEY=docker-ticketradar-secret-key-change-this
-      - DATABASE_URL=sqlite:///data/ticketradar.db
-      - ENABLE_PUSHPLUS=false
-      - PUSHPLUS_TOKEN=
-      - PRICE_THRESHOLD=1000
-      - CHECK_INTERVAL=5
-      - DEFAULT_DEPARTURE=HKG
-      - TRIP_TYPE=2
-      - DEPART_DATE=2025-09-30
-      - RETURN_DATE=2025-10-08
+    env_file:
+      - .env.docker
     volumes:
       - ticketradar_data:/app
       - ticketradar_logs:/app/logs
