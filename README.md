@@ -1,6 +1,10 @@
-# 飞常惠 - 机票价格监控系统
+# 🛫 Ticketradar 机票价格监控系统
 
-一个自动化的机票价格监控系统，可以定期检查Trip.com上的机票价格，在发现低于设定阈值的境外机票时通过PushPlus推送通知，并提供美观的Web界面展示实时数据。
+[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://python.org)
+[![Flask](https://img.shields.io/badge/Flask-2.2+-green.svg)](https://flask.palletsprojects.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+一个智能的机票价格监控系统，支持实时监控多个出发地的机票价格，并通过微信推送低价提醒。
 
 ## 功能特点
 
