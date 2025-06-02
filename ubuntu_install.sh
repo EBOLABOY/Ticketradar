@@ -8,18 +8,25 @@ echo "=================================="
 
 # 检查是否为root用户
 if [[ $EUID -eq 0 ]]; then
-   echo "⚠️  请不要使用root用户运行此脚本"
-   echo "💡 建议使用普通用户，脚本会在需要时提示输入sudo密码"
-   exit 1
+   echo "⚠️  检测到root用户，将以root权限安装"
+   echo "💡 生产环境建议使用普通用户以提高安全性"
+   USE_SUDO=""
+   CURRENT_USER="root"
+   HOME_DIR="/root"
+else
+   echo "✅ 使用普通用户安装"
+   USE_SUDO="sudo"
+   CURRENT_USER=$USER
+   HOME_DIR=$HOME
 fi
 
 # 更新系统包
 echo "📦 更新系统包..."
-sudo apt update
+$USE_SUDO apt update
 
 # 安装Python3和pip
 echo "🐍 安装Python环境..."
-sudo apt install -y python3 python3-pip python3-venv
+$USE_SUDO apt install -y python3 python3-pip python3-venv
 
 # 检查Python版本
 PYTHON_VERSION=$(python3 -c 'import sys; print(".".join(map(str, sys.version_info[:2])))')
@@ -168,7 +175,7 @@ After=network.target
 
 [Service]
 Type=simple
-User=$USER
+User=$CURRENT_USER
 WorkingDirectory=$(pwd)
 Environment=PATH=$(pwd)/venv/bin
 ExecStart=$(pwd)/venv/bin/python $(pwd)/main.py
@@ -189,9 +196,9 @@ echo "   后台启动: ./start_background.sh"
 echo "   停止服务: ./stop_ticketradar.sh"
 echo ""
 echo "🔧 系统服务（可选）："
-echo "   sudo cp ticketradar.service /etc/systemd/system/"
-echo "   sudo systemctl enable ticketradar"
-echo "   sudo systemctl start ticketradar"
+echo "   $USE_SUDO cp ticketradar.service /etc/systemd/system/"
+echo "   $USE_SUDO systemctl enable ticketradar"
+echo "   $USE_SUDO systemctl start ticketradar"
 echo ""
 echo "🌐 访问地址: http://$(hostname -I | awk '{print $1}'):38181"
 echo "👤 默认管理员: admin / admin123"
@@ -200,7 +207,7 @@ echo "📝 配置文件: .env"
 echo "📊 日志文件: ticketradar.log"
 echo ""
 echo "🔧 防火墙配置（如需要）："
-echo "   sudo ufw allow 38181"
+echo "   $USE_SUDO ufw allow 38181"
 echo ""
 echo "💡 下一步："
 echo "   1. 编辑 .env 文件配置PushPlus等参数"
