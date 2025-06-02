@@ -211,7 +211,7 @@ show_deployment_info() {
 main() {
     print_header
 
-    # 检查是否为root用户
+    # 检查用户权限
     if [ "$EUID" -eq 0 ]; then
         print_message "检测到root用户，继续使用root权限部署"
     else

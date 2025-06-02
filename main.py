@@ -1096,7 +1096,21 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-this'
 database_url = os.getenv('DATABASE_URL', 'sqlite:///ticketradar.db')
 # 确保数据目录存在（Docker环境）
 if database_url.startswith('sqlite:///data/'):
-    os.makedirs('data', exist_ok=True)
+    data_dir = 'data'
+    try:
+        os.makedirs(data_dir, mode=0o755, exist_ok=True)
+        print(f"✅ 数据目录已创建: {data_dir}")
+        # 测试目录写权限
+        test_file = os.path.join(data_dir, '.test_write')
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+        print(f"✅ 数据目录写权限正常")
+    except Exception as e:
+        print(f"❌ 数据目录创建失败: {e}")
+        # 回退到当前目录
+        database_url = 'sqlite:///ticketradar.db'
+        print(f"🔄 回退到当前目录数据库: {database_url}")
 app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 

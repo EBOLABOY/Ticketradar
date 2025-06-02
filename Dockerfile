@@ -26,12 +26,16 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # 复制项目文件
 COPY . .
 
-# 创建非root用户
+# 创建非root用户并设置权限
 RUN useradd --create-home --shell /bin/bash ticketradar && \
-    chown -R ticketradar:ticketradar /app
+    chown -R ticketradar:ticketradar /app && \
+    chmod 755 /app
 
 # 切换到非root用户
 USER ticketradar
+
+# 确保工作目录权限正确
+WORKDIR /app
 
 # 暴露端口
 EXPOSE 38181
