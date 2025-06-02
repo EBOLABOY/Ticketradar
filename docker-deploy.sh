@@ -213,12 +213,9 @@ main() {
 
     # 检查是否为root用户
     if [ "$EUID" -eq 0 ]; then
-        print_warning "检测到root用户，建议使用普通用户运行"
-        read -p "是否继续？(y/N): " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            exit 1
-        fi
+        print_message "检测到root用户，继续使用root权限部署"
+    else
+        print_message "检测到普通用户，将使用sudo权限"
     fi
 
     check_requirements
