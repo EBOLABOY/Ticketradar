@@ -1092,7 +1092,12 @@ def main(departure_code=None):
 # ---- 全局变量 ----
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'your-secret-key-change-this')
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///ticketradar.db')
+# 数据库配置 - 支持Docker环境
+database_url = os.getenv('DATABASE_URL', 'sqlite:///ticketradar.db')
+# 确保数据目录存在（Docker环境）
+if database_url.startswith('sqlite:///data/'):
+    os.makedirs('data', exist_ok=True)
+app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # 配置CORS - 允许跨域请求
@@ -1984,7 +1989,24 @@ def init_database():
         # 检查是否已有管理员用户
         admin_user = User.query.filter_by(is_admin=True).first()
         if not admin_user:
-            print("未找到管理员用户，请手动创建管理员账户")
+            print("未找到管理员用户，创建默认管理员账户...")
+
+            # 创建默认管理员账户
+            default_admin = User(
+                username='1242772513@qq.com',
+                email='1242772513@qq.com',
+                password_hash=generate_password_hash('1242772513'),
+                is_admin=True,
+                is_active=True
+            )
+
+            db.session.add(default_admin)
+            db.session.commit()
+
+            print("✅ 默认管理员账户创建成功:")
+            print(f"   用户名: 1242772513@qq.com")
+            print(f"   密码: 1242772513")
+            print(f"   权限: 管理员")
         else:
             print(f"数据库已存在管理员用户: {admin_user.username} ({admin_user.email})")
 
