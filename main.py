@@ -474,54 +474,69 @@ def check_all_user_monitoring_tasks():
         import os
 
         # 使用与Flask应用相同的数据库路径
-        db_path = os.getenv('DATABASE_URL', 'sqlite:///ticketradar.db').replace('sqlite:///', '')
+        database_url = os.getenv('DATABASE_URL', 'sqlite:///ticketradar.db')
+        if database_url.startswith('sqlite:///'):
+            db_path = database_url.replace('sqlite:///', '')
+            # 如果是相对路径且不存在，检查instance目录
+            if not os.path.exists(db_path) and not os.path.isabs(db_path):
+                instance_path = os.path.join('instance', db_path)
+                if os.path.exists(instance_path):
+                    db_path = instance_path
+                    print(f"使用Flask instance目录中的数据库: {db_path}")
+        else:
+            db_path = database_url
+
         if not os.path.exists(db_path):
-            print("数据库文件不存在，跳过用户监控任务检查")
+            print(f"数据库文件不存在: {db_path}，跳过用户监控任务检查")
             return
 
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
 
-        # 查询所有活跃的监控任务
+        # 查询所有活跃的监控任务（包含黑名单字段）
         cursor.execute('''
             SELECT id, user_id, name, departure_city, destination_city,
                    depart_date, return_date, price_threshold, pushplus_token,
-                   last_notification, total_checks, total_notifications
+                   last_notification, total_checks, total_notifications,
+                   blacklist_cities, blacklist_countries
             FROM monitor_tasks
             WHERE is_active = 1 AND pushplus_token IS NOT NULL AND pushplus_token != ''
         ''')
 
         tasks = cursor.fetchall()
-        print(f"🔍 用户监控系统: 找到 {len(tasks)} 个活跃的用户监控任务")
+        if tasks:
+            print(f"🔍 用户监控: 检查 {len(tasks)} 个任务")
 
         for task in tasks:
             try:
-                task_id, user_id, _, departure_city, destination_city, depart_date, return_date, price_threshold, pushplus_token, last_notification, total_checks, total_notifications = task
+                task_id, user_id, _, departure_city, destination_city, depart_date, return_date, price_threshold, pushplus_token, last_notification, total_checks, total_notifications, blacklist_cities, blacklist_countries = task
 
                 # 获取城市显示名称
                 departure_display = get_city_display_name(departure_city)
-                destination_display = get_city_display_name(destination_city) if destination_city else '所有目的地'
-                print(f"🔍 处理用户任务: {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'})")
+                destination_display = destination_city or '所有目的地'
 
                 # 检查是否需要发送通知（避免重复通知）
                 current_time = datetime.datetime.now()
                 if last_notification:
                     last_notif_time = datetime.datetime.fromisoformat(last_notification)
                     if (current_time - last_notif_time).total_seconds() < 86400:
-                        print(f"任务 {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'}) 在24小时内已发送过通知，跳过")
                         continue
 
                 # 为每个用户任务获取专属的航班数据
-                task_flights = get_flights_for_user_task(
-                    departure_city, destination_city, depart_date, return_date
+                flight_result = get_flights_for_user_task(
+                    departure_city, destination_city, depart_date, return_date,
+                    blacklist_cities=blacklist_cities,
+                    blacklist_countries=blacklist_countries
                 )
 
-                if not task_flights:
-                    print(f"任务 {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'}) 未获取到航班数据")
+                # 提取所有境外航班用于价格阈值检查
+                all_task_flights = flight_result['all_flights']
+
+                if not all_task_flights:
                     continue
 
                 # 过滤低于用户设定阈值的机票
-                low_price_flights = [f for f in task_flights if f.get('价格', 0) <= price_threshold]
+                low_price_flights = [f for f in all_task_flights if f.get('价格', 0) <= price_threshold]
 
                 if low_price_flights:
                     print(f"🎯 任务 {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'}) 发现 {len(low_price_flights)} 个低价机票")
@@ -570,11 +585,11 @@ def check_all_user_monitoring_tasks():
                         ))
                         conn.commit()
 
-                        print(f"✅ 已向用户 {user_id} 发送监控任务 '{departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'})' 的低价通知")
+                        print(f"✅ {departure_city}→{destination_display}: 发现{len(low_price_flights)}个低价机票，已推送")
                     else:
-                        print(f"❌ 向用户 {user_id} 发送通知失败")
+                        print(f"❌ {departure_city}→{destination_display}: 推送失败")
                 else:
-                    print(f"任务 {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'}) 未发现低于 {price_threshold} 元的机票")
+                    pass  # 不输出未发现低价机票的日志
                     # 即使没有低价机票，也要更新检查时间
                     cursor.execute('''
                         UPDATE monitor_tasks
@@ -588,9 +603,7 @@ def check_all_user_monitoring_tasks():
                     conn.commit()
 
             except Exception as e:
-                print(f"处理用户监控任务 {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'}) 时出错: {e}")
-                import traceback
-                print(f"错误详情: {traceback.format_exc()}")
+                print(f"❌ 处理用户监控任务时出错: {e}")
                 continue
 
         conn.close()
@@ -723,19 +736,17 @@ def fetch_flights_with_session(departure_city, destination_city, depart_date, pa
         print(f"🔍 简化获取失败: {e}")
         raise e
 
-def get_flights_for_user_task(departure_city, destination_city, depart_date, return_date):
-    """为用户任务获取专属的航班数据"""
+def get_flights_for_user_task(departure_city, destination_city, depart_date, return_date, blacklist_cities=None, blacklist_countries=None):
+    """为用户任务获取专属的航班数据，支持黑名单过滤"""
     try:
-        departure_display = get_city_display_name(departure_city)
-        destination_display = get_city_display_name(destination_city) if destination_city else '所有目的地'
-        print(f"🔍 获取用户任务航班数据: {departure_display}({departure_city}) → {destination_display}({destination_city or 'ALL'})")
+        trip_type = "往返" if return_date else "单程"
+        destination_display = destination_city or '所有目的地'
+        print(f"🔍 用户任务: {departure_city} → {destination_display} ({trip_type})")
 
-        # 用户监控任务只监控所有目的地，使用原接口
-        print(f"🔍 用户监控: 使用原接口获取 {departure_city} → 所有目的地 航班")
-        # 创建特定的payload
+        # 创建特定的payload - 支持指定目的地和所有目的地
         task_payload = create_payload_for_user_task(
             departure_code=departure_city,
-            destination_code=None,  # 固定为None，只监控所有目的地
+            destination_code=destination_city,  # 传递实际的目的地参数
             depart_date=depart_date,
             return_date=return_date
         )
@@ -743,31 +754,19 @@ def get_flights_for_user_task(departure_city, destination_city, depart_date, ret
         response = requests.post(url, headers=headers, json=task_payload, timeout=30)
         response.raise_for_status()
 
-        # 用户监控任务只使用原接口的解析函数
-        print(f"🔍 用户监控: 使用原解析函数")
+        # 解析API响应
         response_data = response.json()
         routes_count = len(response_data.get('routes', []))
-        print(f"🔍 API响应: {routes_count} 个routes")
+        print(f"🔍 API返回: {routes_count} 个航线")
 
         # 清洗数据 - 使用更健壮的方法
         cleaned_data = []
 
         if response_data.get('routes'):
-            print(f"🔍 找到 {len(response_data['routes'])} 个routes，开始清洗...")
-
             for idx, route in enumerate(response_data['routes']):
                 try:
                     arrive_city_info = route.get('arriveCity', {})
                     price_info_list = route.get('pl', [])
-
-                    # 保留第一个route的原始数据用于调试
-                    if idx == 0:
-                        print(f"🔍 原始route数据样本:")
-                        print(f"    route键: {list(route.keys())}")
-                        print(f"    arriveCity: {arrive_city_info}")
-                        if price_info_list:
-                            print(f"    price_info: {price_info_list[0]}")
-                        print(f"    完整route: {route}")
 
                     if arrive_city_info and price_info_list:
                         price_info = price_info_list[0]
@@ -799,26 +798,81 @@ def get_flights_for_user_task(departure_city, destination_city, depart_date, ret
                         cleaned_data.append(flight_data)
 
                 except Exception as e:
-                    print(f"🔍 处理route时出错: {e}")
                     continue
-
-        print(f"🔍 清洗后: {len(cleaned_data)} 个航班")
 
         # 如果手动清洗失败，回退到原始函数
         if not cleaned_data and response_data.get('routes'):
-            print(f"🔍 手动清洗失败，回退到原始清洗函数...")
             try:
                 cleaned_data = clean_flight_data(response_data, base_url)
-                print(f"🔍 回退清洗结果: {len(cleaned_data)} 个航班")
             except Exception as e:
-                print(f"🔍 回退清洗也失败: {e}")
                 cleaned_data = []
 
-        return cleaned_data
+        # 筛选境外目的地 - 使用与主页相同的逻辑
+        if cleaned_data:
+            df = pd.DataFrame(cleaned_data)
+
+            # 第1步：先排除中国航线，只保留境外航线
+            international_df = df[df['国家'] != '中國']
+
+            # 第2步：应用黑名单过滤
+            filtered_df = international_df.copy()
+
+            # 解析黑名单城市
+            if blacklist_cities:
+                blacklist_city_list = [city.strip().upper() for city in blacklist_cities.split(',') if city.strip()]
+                if blacklist_city_list:
+                    # 过滤掉黑名单中的城市（不区分大小写）
+                    filtered_df = filtered_df[~filtered_df['代码'].str.upper().isin(blacklist_city_list)]
+                    print(f"🚫 黑名单城市过滤: {blacklist_city_list}, 剩余 {len(filtered_df)} 个航班")
+
+            # 解析黑名单国家
+            if blacklist_countries:
+                blacklist_country_list = [country.strip() for country in blacklist_countries.split(',') if country.strip()]
+                if blacklist_country_list:
+                    # 过滤掉黑名单中的国家
+                    filtered_df = filtered_df[~filtered_df['国家'].isin(blacklist_country_list)]
+                    print(f"🚫 黑名单国家过滤: {blacklist_country_list}, 剩余 {len(filtered_df)} 个航班")
+
+            # 第3步：计算统计信息（基于过滤后的境外航线）
+            total_flights = len(filtered_df)
+            min_price = filtered_df['价格'].min() if not filtered_df.empty else 0
+
+            # 第4步：按价格排序，选择最低价格的前9个用于显示
+            sorted_df = filtered_df.sort_values('价格')
+            display_flights = sorted_df.head(9).to_dict('records')
+            all_flights = sorted_df.to_dict('records')
+
+            print(f"🔍 境外航线统计: 总数{total_flights}个，显示前{len(display_flights)}个最低价")
+
+            return {
+                'flights': display_flights,
+                'all_flights': all_flights,
+                'stats': {
+                    'total_flights': total_flights,
+                    'min_price': min_price
+                }
+            }
+        else:
+            print(f"🔍 未获取到有效数据")
+            return {
+                'flights': [],
+                'all_flights': [],
+                'stats': {
+                    'total_flights': 0,
+                    'min_price': 0
+                }
+            }
 
     except Exception as e:
         print(f"获取用户任务航班数据失败: {e}")
-        return []
+        return {
+            'flights': [],
+            'all_flights': [],
+            'stats': {
+                'total_flights': 0,
+                'min_price': 0
+            }
+        }
 
 # ---- 保留原函数用于向后兼容 ----
 def check_user_monitoring_tasks(departure_code=None, flights_data=None):
@@ -1213,6 +1267,8 @@ class MonitorTask(db.Model):
     trip_type = db.Column(db.String(10), default='round_trip')
     price_threshold = db.Column(db.Float, default=1000.0)
     pushplus_token = db.Column(db.String(255))  # 用户个人PushPlus令牌
+    blacklist_cities = db.Column(db.Text)  # 黑名单城市列表，用逗号分隔
+    blacklist_countries = db.Column(db.Text)  # 黑名单国家列表，用逗号分隔
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.datetime.now(datetime.timezone.utc))
     last_check = db.Column(db.DateTime)
@@ -1606,7 +1662,8 @@ def dashboard():
     # 获取用户的监控任务（限制为一个）
     user_task = MonitorTask.query.filter_by(user_id=current_user.id).first()
     if user_task:
-        print(f"🔍 Dashboard: {user_task.departure_city} → 所有目的地 (阈值: ¥{user_task.price_threshold})")
+        destination_text = user_task.destination_city or '所有目的地'
+        print(f"🔍 Dashboard: {user_task.departure_city} → {destination_text} (¥{user_task.price_threshold})")
 
     # 如果用户有监控任务，获取对应的机票数据
     task_flights = []
@@ -1615,88 +1672,64 @@ def dashboard():
         # 使用departure_city作为键（存储的是城市代码如'HKG'）
         departure_code = user_task.departure_city
 
-        # 如果用户指定了目的地，需要使用特定的API请求
-        if user_task.destination_city and user_task.destination_city.strip():
-            try:
-                print(f"🔍 Dashboard: 用户指定了目的地 {user_task.destination_city}")
-                print(f"🔍 Dashboard: 获取 {get_city_display_name(departure_code)} 到 {user_task.destination_city} 的特定航班数据...")
+        # 使用统一的函数获取航班数据 - 确保Dashboard和推送一致
+        try:
+            # 使用用户任务的具体日期
+            depart_date_str = user_task.depart_date.strftime('%Y-%m-%d')
+            return_date_str = user_task.return_date.strftime('%Y-%m-%d') if user_task.return_date else None
 
-                # 使用用户任务的具体日期
-                depart_date_str = user_task.depart_date.strftime('%Y-%m-%d')
-                return_date_str = user_task.return_date.strftime('%Y-%m-%d') if user_task.return_date else None
-                print(f"🔍 Dashboard: 使用日期 {depart_date_str} → {return_date_str}")
 
-                # 使用新的FlightListSearchSSE接口
-                print(f"🔍 Dashboard: 使用FlightListSearchSSE接口获取特定航线数据")
-                task_payload = create_flight_list_payload(
-                    departure_code=departure_code,
-                    destination_code=user_task.destination_city,
-                    depart_date=depart_date_str,
-                    return_date=return_date_str
-                )
 
-                # 使用Session管理Cookie并简化headers
-                response = fetch_flights_with_session(departure_code, user_task.destination_city, depart_date_str, task_payload)
-                response.raise_for_status()
+            # 使用统一的get_flights_for_user_task函数
+            flight_result = get_flights_for_user_task(
+                departure_city=departure_code,
+                destination_city=user_task.destination_city,
+                depart_date=depart_date_str,
+                return_date=return_date_str,
+                blacklist_cities=user_task.blacklist_cities,
+                blacklist_countries=user_task.blacklist_countries
+            )
 
-                # 解析SSE响应
-                response_data = parse_sse_response(response)
+            # 提取数据
+            task_flights = flight_result['flights']  # 前9个最低价航班
+            all_flights = flight_result['all_flights']  # 所有境外航班
+            base_stats = flight_result['stats']  # 基础统计信息
 
-                if response_data:
-                    # 使用新的FlightListSearchSSE响应解析函数
-                    cleaned_data = parse_flight_list_response(response_data)
-                else:
-                    cleaned_data = []
-
-                if cleaned_data:
-                    # 直接使用清洗后的数据，因为API请求已经是特定目的地的
-                    task_flights = cleaned_data
-                    print(f"🔍 找到 {len(task_flights)} 个{user_task.destination_city}航班")
-                    flash(f'已获取 {get_city_display_name(departure_code)} 到 {user_task.destination_city} 的最新航班数据', 'success')
-                else:
-                    task_flights = []
-                    flash(f'未找到 {get_city_display_name(departure_code)} 到 {user_task.destination_city} 的航班数据', 'warning')
-
-            except Exception as e:
-                print(f"🔍 获取特定目的地航班数据失败: {e}")
-                task_flights = []
-                flash(f'获取 {get_city_display_name(departure_code)} 到 {user_task.destination_city} 航班数据失败，请稍后重试', 'warning')
-        else:
-            # 如果没有指定目的地，使用缓存的数据或动态获取所有目的地数据
-            if departure_code in all_flights_data:
-                # 获取对应始发地的机票数据
-                task_flights = all_flights_data.get(departure_code, [])
+            if task_flights:
+                destination_text = user_task.destination_city or '所有目的地'
+                flash(f'已获取 {get_city_display_name(departure_code)} 到 {destination_text} 的最新航班数据', 'success')
             else:
-                # 如果没有缓存数据，尝试动态获取
-                try:
-                    print(f"Dashboard: 获取 {departure_code} 航班数据")
-                    task_flights = fetch_flights_for_city(departure_code)
-                    # 将数据缓存到all_flights_data中
-                    all_flights_data[departure_code] = task_flights
-                    flash(f'已为您获取 {get_city_display_name(departure_code)} 的最新航班数据', 'success')
-                except Exception as e:
-                    print(f"Dashboard: 获取航班数据失败: {e}")
-                    task_flights = []
-                    flash(f'获取 {get_city_display_name(departure_code)} 航班数据失败，请稍后重试', 'warning')
+                destination_text = user_task.destination_city or '所有目的地'
+                flash(f'未找到 {get_city_display_name(departure_code)} 到 {destination_text} 的航班数据', 'warning')
 
-        # 过滤低于阈值的机票并计算统计信息
-        if task_flights:
-            low_price_flights = [f for f in task_flights if f.get('价格', 0) <= user_task.price_threshold]
+        except Exception as e:
+            print(f"🔍 Dashboard: 获取航班数据失败: {e}")
+            task_flights = []
+            all_flights = []
+            base_stats = {'total_flights': 0, 'min_price': 0}
+            destination_text = user_task.destination_city or '所有目的地'
+            flash(f'获取 {get_city_display_name(departure_code)} 到 {destination_text} 航班数据失败，请稍后重试', 'warning')
 
-            # 统计信息（基于完整数据）
+        # 计算统计信息（基于所有境外航班）
+        if all_flights:
+            low_price_flights = [f for f in all_flights if f.get('价格', 0) <= user_task.price_threshold]
+
+            # 统计信息（基于完整的境外航班数据）
             task_stats = {
-                'total_flights': len(task_flights),
-                'low_price_count': len(low_price_flights),
-                'min_price': min([f.get('价格', 0) for f in task_flights]) if task_flights else 0,
+                'total_flights': base_stats['total_flights'],  # 总境外航班数
+                'low_price_count': len(low_price_flights),     # 低价航班数
+                'min_price': base_stats['min_price'],          # 最低价格
+                'departure_city_name': get_city_display_name(departure_code)
+            }
+        else:
+            task_stats = {
+                'total_flights': 0,
+                'low_price_count': 0,
+                'min_price': 0,
                 'departure_city_name': get_city_display_name(departure_code)
             }
 
-            # 只显示前9个机票（简化版）
-            task_flights = task_flights[:9]
 
-    # 简化的调试输出
-    if task_flights:
-        print(f"Dashboard: 显示 {len(task_flights)} 个航班")
 
     return render_template('dashboard.html',
                          user=current_user,
@@ -1786,10 +1819,13 @@ def create_task():
         return redirect(url_for('dashboard'))
 
     departure_city = request.form.get('departure_city', '').strip().upper()  # 转换为大写
+    destination_city = request.form.get('destination_city', '').strip().upper()  # 新增目的地字段
     depart_date = request.form.get('depart_date', '')
     return_date = request.form.get('return_date', '')
     price_threshold = request.form.get('price_threshold', 1000)
     pushplus_token = request.form.get('pushplus_token', '').strip()
+    blacklist_cities = request.form.get('blacklist_cities', '').strip()  # 黑名单城市
+    blacklist_countries = request.form.get('blacklist_countries', '').strip()  # 黑名单国家
 
     # 验证输入
     errors = []
@@ -1798,6 +1834,10 @@ def create_task():
         errors.append('请输入出发城市代码')
     elif len(departure_city) != 3 or not departure_city.isalpha():
         errors.append('出发城市代码必须是3位字母，如：BJS、SHA、CAN、SZX等')
+
+    # 验证目的地城市（可选）
+    if destination_city and (len(destination_city) != 3 or not destination_city.isalpha()):
+        errors.append('目的地城市代码必须是3位字母，如：SEL、LON、NYC等')
 
 
 
@@ -1835,20 +1875,23 @@ def create_task():
     try:
         # 自动生成任务名称
         trip_type_text = '往返' if return_date_obj else '单程'
-        task_name = f"{departure_city}→所有目的地监控({trip_type_text})"
+        destination_text = destination_city if destination_city else '所有目的地'
+        task_name = f"{departure_city}→{destination_text}监控({trip_type_text})"
 
-        # 创建监控任务（只监控所有目的地）
+        # 创建监控任务（支持指定目的地或所有目的地）
         task = MonitorTask(
             user_id=current_user.id,
             name=task_name,
             departure_city=departure_city,  # 直接使用用户输入的代码
             departure_code=departure_city,
-            destination_city=None,  # 固定为None，只监控所有目的地
+            destination_city=destination_city if destination_city else None,  # 支持指定目的地
             depart_date=depart_date_obj,
             return_date=return_date_obj,
             trip_type='round_trip' if return_date_obj else 'one_way',
             price_threshold=price_threshold,
-            pushplus_token=pushplus_token if pushplus_token else None
+            pushplus_token=pushplus_token if pushplus_token else None,
+            blacklist_cities=blacklist_cities if blacklist_cities else None,
+            blacklist_countries=blacklist_countries if blacklist_countries else None
         )
 
         db.session.add(task)
@@ -1877,18 +1920,24 @@ def edit_task(task_id):
             'id': task.id,
             'name': task.name,
             'departure_city': task.departure_city,
+            'destination_city': task.destination_city or '',
             'depart_date': task.depart_date.strftime('%Y-%m-%d'),
             'return_date': task.return_date.strftime('%Y-%m-%d') if task.return_date else '',
             'price_threshold': task.price_threshold,
-            'pushplus_token': task.pushplus_token or ''
+            'pushplus_token': task.pushplus_token or '',
+            'blacklist_cities': task.blacklist_cities or '',
+            'blacklist_countries': task.blacklist_countries or ''
         })
 
     # POST 请求 - 更新任务
     departure_city = request.form.get('departure_city', '').strip().upper()
+    destination_city = request.form.get('destination_city', '').strip().upper()  # 新增目的地字段
     depart_date = request.form.get('depart_date', '')
     return_date = request.form.get('return_date', '')
     price_threshold = request.form.get('price_threshold', 1000)
     pushplus_token = request.form.get('pushplus_token', '').strip()
+    blacklist_cities = request.form.get('blacklist_cities', '').strip()  # 黑名单城市
+    blacklist_countries = request.form.get('blacklist_countries', '').strip()  # 黑名单国家
 
     # 验证输入（复用创建任务的验证逻辑）
     errors = []
@@ -1897,6 +1946,10 @@ def edit_task(task_id):
         errors.append('请输入出发城市代码')
     elif len(departure_city) != 3 or not departure_city.isalpha():
         errors.append('出发城市代码必须是3位字母，如：BJS、SHA、CAN、SZX等')
+
+    # 验证目的地城市（可选）
+    if destination_city and (len(destination_city) != 3 or not destination_city.isalpha()):
+        errors.append('目的地城市代码必须是3位字母，如：SEL、LON、NYC等')
 
 
 
@@ -1934,18 +1987,21 @@ def edit_task(task_id):
     try:
         # 自动生成任务名称
         trip_type_text = '往返' if return_date_obj else '单程'
-        task_name = f"{departure_city}→所有目的地监控({trip_type_text})"
+        destination_text = destination_city if destination_city else '所有目的地'
+        task_name = f"{departure_city}→{destination_text}监控({trip_type_text})"
 
-        # 更新任务（只监控所有目的地）
+        # 更新任务（支持指定目的地或所有目的地）
         task.name = task_name
         task.departure_city = departure_city
         task.departure_code = departure_city
-        task.destination_city = None  # 固定为None，只监控所有目的地
+        task.destination_city = destination_city if destination_city else None  # 支持指定目的地
         task.depart_date = depart_date_obj
         task.return_date = return_date_obj
         task.trip_type = 'round_trip' if return_date_obj else 'one_way'
         task.price_threshold = price_threshold
         task.pushplus_token = pushplus_token if pushplus_token else None
+        task.blacklist_cities = blacklist_cities if blacklist_cities else None
+        task.blacklist_countries = blacklist_countries if blacklist_countries else None
 
         db.session.commit()
         flash('监控任务更新成功！', 'success')
@@ -2000,6 +2056,9 @@ def init_database():
     with app.app_context():
         db.create_all()
 
+        # 检查并添加黑名单字段（数据库迁移）
+        migrate_blacklist_fields()
+
         # 检查是否已有管理员用户
         admin_user = User.query.filter_by(is_admin=True).first()
         if not admin_user:
@@ -2023,6 +2082,35 @@ def init_database():
             print(f"   权限: 管理员")
         else:
             print(f"数据库已存在管理员用户: {admin_user.username} ({admin_user.email})")
+
+def migrate_blacklist_fields():
+    """迁移黑名单字段到现有数据库"""
+    try:
+        # 获取数据库连接
+        from sqlalchemy import text
+
+        # 检查字段是否存在
+        result = db.session.execute(text("PRAGMA table_info(monitor_tasks)"))
+        columns = [row[1] for row in result.fetchall()]
+
+        # 添加blacklist_cities字段
+        if 'blacklist_cities' not in columns:
+            print("➕ 添加blacklist_cities字段...")
+            db.session.execute(text("ALTER TABLE monitor_tasks ADD COLUMN blacklist_cities TEXT"))
+            print("✅ blacklist_cities字段添加成功")
+
+        # 添加blacklist_countries字段
+        if 'blacklist_countries' not in columns:
+            print("➕ 添加blacklist_countries字段...")
+            db.session.execute(text("ALTER TABLE monitor_tasks ADD COLUMN blacklist_countries TEXT"))
+            print("✅ blacklist_countries字段添加成功")
+
+        db.session.commit()
+        print("🎉 数据库迁移完成")
+
+    except Exception as e:
+        print(f"⚠️ 数据库迁移跳过: {e}")
+        db.session.rollback()
 
 # ---- 更新数据函数 ----
 def update_web_data(df, international_top_df, departure_code=None):
@@ -2108,6 +2196,14 @@ def create_payload_for_user_task(departure_code, destination_code=None, depart_d
     # 复制原始payload
     updated_payload = copy.deepcopy(payload)
 
+    # 根据是否有返程日期设置行程类型
+    if return_date:
+        updated_payload['tt'] = 2  # 往返
+        print(f"🔍 设置为往返票: {depart_date} → {return_date}")
+    else:
+        updated_payload['tt'] = 1  # 单程
+        print(f"🔍 设置为单程票: {depart_date}")
+
     # 更新始发地
     if 'segments' in updated_payload and len(updated_payload['segments']) > 0:
         if 'dcs' in updated_payload['segments'][0] and len(updated_payload['segments'][0]['dcs']) > 0:
@@ -2128,10 +2224,16 @@ def create_payload_for_user_task(departure_code, destination_code=None, depart_d
             updated_payload['segments'][0]['drl'][0]['end'] = depart_date_str
 
         # 更新返程日期
-        if 'rdrl' in updated_payload['segments'][0] and len(updated_payload['segments'][0]['rdrl']) > 0:
-            return_date_str = return_date or app_settings['return_date']
-            updated_payload['segments'][0]['rdrl'][0]['begin'] = return_date_str
-            updated_payload['segments'][0]['rdrl'][0]['end'] = return_date_str
+        if return_date:
+            # 往返票：设置返程日期
+            if 'rdrl' in updated_payload['segments'][0] and len(updated_payload['segments'][0]['rdrl']) > 0:
+                updated_payload['segments'][0]['rdrl'][0]['begin'] = return_date
+                updated_payload['segments'][0]['rdrl'][0]['end'] = return_date
+            else:
+                updated_payload['segments'][0]['rdrl'] = [{"begin": return_date, "end": return_date}]
+        else:
+            # 单程票：返程日期范围应为空数组
+            updated_payload['segments'][0]['rdrl'] = []
 
     # 更新transactionId，使用当前时间戳
     current_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -2778,7 +2880,9 @@ if __name__ == "__main__":
     load_dotenv()
 
     # 初始化数据库
+    print("🔧 正在初始化数据库...")
     init_database()
+    print("✅ 数据库初始化完成")
 
     # 更新设置
     app_settings['price_threshold'] = float(os.getenv("PRICE_THRESHOLD", "1000"))
@@ -2806,9 +2910,16 @@ if __name__ == "__main__":
 
     print(f"默认始发地设置为: {app_settings['departure_city']} ({current_departure})")
 
+    # 确保数据库完全初始化后再启动监控
+    print("🚀 启动监控系统...")
+
     # 启动监控并推送（在后台线程中）
     monitor_thread = threading.Thread(target=start_monitoring_and_push, daemon=True)
     monitor_thread.start()
+
+    # 给监控线程一点时间启动
+    time.sleep(2)
+    print("✅ 监控系统已启动")
 
     # 启动Web服务器（在主线程中）
     run_web_server()

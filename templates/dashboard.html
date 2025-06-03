@@ -315,7 +315,7 @@
                                         <i class="bi bi-geo-alt text-primary me-2"></i>
                                         <div>
                                             <small class="text-muted">路线</small>
-                                            <div><strong>{{ task.departure_city }}</strong> → <strong>所有目的地</strong></div>
+                                            <div><strong>{{ task.departure_city }}</strong> → <strong>{{ task.destination_city or '所有目的地' }}</strong></div>
                                         </div>
                                     </div>
                                 </div>
@@ -493,26 +493,11 @@
                                 </div>
                                 {% endif %}
 
-                                <!-- 飞行时长和中转信息（只在有具体信息时显示） -->
+                                <!-- 飞行时长（只在有具体信息时显示） -->
                                 {% if flight.get('飞行时长') and flight['飞行时长'] != '查看详情' %}
                                 <div class="detail-item">
                                     <i class="bi bi-stopwatch"></i>
                                     <span>{{ flight['飞行时长'] }}</span>
-                                    {% if flight.get('中转次数', 0) > 0 %}
-                                    <span class="badge bg-warning ms-2">{{ flight['中转次数'] }}次中转</span>
-                                    {% else %}
-                                    <span class="badge bg-primary ms-2">直飞</span>
-                                    {% endif %}
-                                </div>
-                                {% else %}
-                                <!-- 如果没有飞行时长信息，只显示中转状态 -->
-                                <div class="detail-item">
-                                    <i class="bi bi-info-circle"></i>
-                                    {% if flight.get('中转次数', 0) > 0 %}
-                                    <span class="badge bg-warning">{{ flight['中转次数'] }}次中转</span>
-                                    {% else %}
-                                    <span class="badge bg-primary">直飞</span>
-                                    {% endif %}
                                 </div>
                                 {% endif %}
                             </div>
@@ -609,6 +594,19 @@
                                     </small>
                                 </div>
 
+                                <div class="modern-form-group">
+                                    <label class="modern-label">
+                                        <i class="bi bi-geo"></i>
+                                        目的地城市
+                                    </label>
+                                    <input type="text" class="form-control modern-input" id="destination_city" name="destination_city"
+                                           placeholder="如：SEL（可选，留空监控所有目的地）" pattern="[A-Z]{3}">
+                                    <small class="form-hint">
+                                        <i class="bi bi-info-circle"></i>
+                                        可选字段：留空监控所有目的地，填写则监控特定目的地
+                                    </small>
+                                </div>
+
                                 <div class="date-group">
                                     <div class="modern-form-group">
                                         <label class="modern-label">
@@ -625,6 +623,44 @@
                                         <input type="date" class="form-control modern-input" id="return_date" name="return_date">
                                         <small class="form-hint">可选，留空为单程</small>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 过滤设置卡片 -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <i class="bi bi-funnel-fill text-warning"></i>
+                                <span>过滤设置</span>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="modern-form-group">
+                                            <label class="modern-label">
+                                                <i class="bi bi-geo-alt-fill text-danger"></i>
+                                                排除城市
+                                            </label>
+                                            <input type="text" class="form-control modern-input" id="blacklist_cities" name="blacklist_cities"
+                                                   placeholder="DLC,SYX,TPE">
+                                            <small class="form-hint">用逗号分隔城市代码</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="modern-form-group">
+                                            <label class="modern-label">
+                                                <i class="bi bi-flag-fill text-danger"></i>
+                                                排除国家
+                                            </label>
+                                            <input type="text" class="form-control modern-input" id="blacklist_countries" name="blacklist_countries"
+                                                   placeholder="印度,菲律賓,緬甸">
+                                            <small class="form-hint">用逗号分隔国家名称</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info mt-2" style="font-size: 0.85rem;">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>过滤说明：</strong>设置后将从监控结果中排除指定的城市和国家，让推送更精准
                                 </div>
                             </div>
                         </div>
@@ -736,6 +772,19 @@
                                     </small>
                                 </div>
 
+                                <div class="modern-form-group">
+                                    <label class="modern-label">
+                                        <i class="bi bi-geo"></i>
+                                        目的地城市
+                                    </label>
+                                    <input type="text" class="form-control modern-input" id="edit_destination_city" name="destination_city"
+                                           placeholder="如：SEL（可选，留空监控所有目的地）" pattern="[A-Z]{3}">
+                                    <small class="form-hint">
+                                        <i class="bi bi-info-circle text-primary"></i>
+                                        可选字段：留空监控所有目的地，填写则监控特定目的地
+                                    </small>
+                                </div>
+
                                 <div class="date-group">
                                     <div class="modern-form-group">
                                         <label class="modern-label">
@@ -752,6 +801,44 @@
                                         <input type="date" class="form-control modern-input" id="edit_return_date" name="return_date">
                                         <small class="form-hint">可选，留空为单程</small>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 过滤设置卡片 -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <i class="bi bi-funnel-fill text-warning"></i>
+                                <span>过滤设置</span>
+                            </div>
+                            <div class="form-card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="modern-form-group">
+                                            <label class="modern-label">
+                                                <i class="bi bi-geo-alt-fill text-danger"></i>
+                                                排除城市
+                                            </label>
+                                            <input type="text" class="form-control modern-input" id="edit_blacklist_cities" name="blacklist_cities"
+                                                   placeholder="DLC,SYX,TPE">
+                                            <small class="form-hint">用逗号分隔城市代码</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="modern-form-group">
+                                            <label class="modern-label">
+                                                <i class="bi bi-flag-fill text-danger"></i>
+                                                排除国家
+                                            </label>
+                                            <input type="text" class="form-control modern-input" id="edit_blacklist_countries" name="blacklist_countries"
+                                                   placeholder="印度,菲律賓,緬甸">
+                                            <small class="form-hint">用逗号分隔国家名称</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-info mt-2" style="font-size: 0.85rem;">
+                                    <i class="bi bi-info-circle"></i>
+                                    <strong>过滤说明：</strong>设置后将从监控结果中排除指定的城市和国家，让推送更精准
                                 </div>
                             </div>
                         </div>
@@ -841,9 +928,12 @@
                 // 填充表单数据
                 document.getElementById('edit_price_threshold').value = data.price_threshold;
                 document.getElementById('edit_departure_city').value = data.departure_city;
+                document.getElementById('edit_destination_city').value = data.destination_city || '';
                 document.getElementById('edit_depart_date').value = data.depart_date;
                 document.getElementById('edit_return_date').value = data.return_date || '';
                 document.getElementById('edit_pushplus_token').value = data.pushplus_token || '';
+                document.getElementById('edit_blacklist_cities').value = data.blacklist_cities || '';
+                document.getElementById('edit_blacklist_countries').value = data.blacklist_countries || '';
 
                 // 设置表单提交地址
                 document.getElementById('editTaskForm').action = `/edit-task/${taskId}`;
