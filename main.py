@@ -467,22 +467,19 @@ def generate_beautiful_html_template(title, content_data):
 
 # ---- 独立的用户监控系统 ----
 def check_all_user_monitoring_tasks():
-    """独立的用户监控系统 - 不依赖主循环数据"""
+    """独立的用户监控系统 - 不依赖主循环数据，不受全局ENABLE_PUSHPLUS影响"""
     try:
         # 使用直接的SQLite连接，避免Flask应用上下文问题
         import sqlite3
         import os
 
-        # 使用与Flask应用相同的数据库路径
+        # 强制使用Flask应用的instance目录数据库，确保数据一致性
         database_url = os.getenv('DATABASE_URL', 'sqlite:///ticketradar.db')
         if database_url.startswith('sqlite:///'):
-            db_path = database_url.replace('sqlite:///', '')
-            # 如果是相对路径且不存在，检查instance目录
-            if not os.path.exists(db_path) and not os.path.isabs(db_path):
-                instance_path = os.path.join('instance', db_path)
-                if os.path.exists(instance_path):
-                    db_path = instance_path
-                    print(f"使用Flask instance目录中的数据库: {db_path}")
+            db_filename = database_url.replace('sqlite:///', '')
+            # 始终使用instance目录中的数据库，与Flask应用保持一致
+            db_path = os.path.join('instance', db_filename)
+            print(f"🔍 用户监控系统使用数据库: {db_path}")
         else:
             db_path = database_url
 
@@ -494,6 +491,7 @@ def check_all_user_monitoring_tasks():
         cursor = conn.cursor()
 
         # 查询所有活跃的监控任务（包含黑名单字段）
+        # 用户监控任务不受全局ENABLE_PUSHPLUS设置影响，只要任务有PushPlus令牌就执行
         cursor.execute('''
             SELECT id, user_id, name, departure_city, destination_city,
                    depart_date, return_date, price_threshold, pushplus_token,
@@ -504,8 +502,12 @@ def check_all_user_monitoring_tasks():
         ''')
 
         tasks = cursor.fetchall()
+        print(f"🔍 用户监控系统执行: 数据库查询到 {len(tasks)} 个任务")
+
         if tasks:
-            print(f"🔍 用户监控: 检查 {len(tasks)} 个任务")
+            print(f"🔍 用户监控: 开始处理 {len(tasks)} 个任务")
+        else:
+            print("⚠️ 用户监控: 没有找到活跃的监控任务")
 
         for task in tasks:
             try:
@@ -561,12 +563,12 @@ def check_all_user_monitoring_tasks():
                     # 生成HTML通知内容
                     notification_content = generate_beautiful_html_template(title, content_data)
 
-                    # 发送个人推送（不使用群组）
+                    # 发送个人推送（使用任务自己的PushPlus令牌，不受全局ENABLE_PUSHPLUS影响）
                     success = send_pushplus_notification(
-                        pushplus_token,
+                        pushplus_token,  # 使用任务自己的令牌
                         title,
                         notification_content,
-                        topic=None  # 个人推送
+                        topic=None  # 个人推送，不使用群组
                     )
 
                     if success:
@@ -1812,11 +1814,14 @@ def generate_invite():
 @login_required
 def create_task():
     """创建监控任务"""
-    # 检查用户是否已有监控任务
-    existing_task = MonitorTask.query.filter_by(user_id=current_user.id).first()
-    if existing_task:
-        flash('您已经有一个监控任务，请先删除现有任务再创建新的', 'error')
-        return redirect(url_for('dashboard'))
+    # 临时移除单任务限制，用于调试
+    print(f"🔍 创建任务 - 用户ID: {current_user.id}, 用户名: {current_user.username}")
+
+    # 检查用户是否已有监控任务（暂时注释掉）
+    # existing_task = MonitorTask.query.filter_by(user_id=current_user.id).first()
+    # if existing_task:
+    #     flash('您已经有一个监控任务，请先删除现有任务再创建新的', 'error')
+    #     return redirect(url_for('dashboard'))
 
     departure_city = request.form.get('departure_city', '').strip().upper()  # 转换为大写
     destination_city = request.form.get('destination_city', '').strip().upper()  # 新增目的地字段
