@@ -1762,7 +1762,10 @@ def admin():
     # 最近的邀请码
     recent_codes = InviteCode.query.order_by(InviteCode.created_at.desc()).limit(10).all()
 
-    return render_template('admin.html', stats=stats, recent_codes=recent_codes)
+    # 用户列表
+    users = User.query.order_by(User.created_at.desc()).all()
+
+    return render_template('admin.html', stats=stats, recent_codes=recent_codes, users=users)
 
 @app.route('/admin/generate-invite', methods=['POST'])
 @login_required
@@ -1808,6 +1811,84 @@ def generate_invite():
         flash(f'生成失败：{str(e)}', 'error')
 
     return redirect(url_for('admin'))
+
+@app.route('/admin/deactivate-invite/<int:code_id>', methods=['POST'])
+@login_required
+def deactivate_invite(code_id):
+    """停用邀请码"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': '需要管理员权限'}), 403
+
+    try:
+        invite_code = InviteCode.query.get_or_404(code_id)
+
+        if not invite_code.is_active:
+            return jsonify({'success': False, 'message': '邀请码已经是停用状态'}), 400
+
+        invite_code.is_active = False
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': '邀请码已成功停用'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'停用失败：{str(e)}'}), 500
+
+@app.route('/admin/toggle-user/<int:user_id>', methods=['POST'])
+@login_required
+def toggle_user(user_id):
+    """切换用户状态（激活/暂停）"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': '需要管理员权限'}), 403
+
+    try:
+        user = User.query.get_or_404(user_id)
+
+        # 不能操作自己的账户
+        if user.id == current_user.id:
+            return jsonify({'success': False, 'message': '不能操作自己的账户'}), 400
+
+        # 不能操作其他管理员账户
+        if user.is_admin:
+            return jsonify({'success': False, 'message': '不能操作管理员账户'}), 400
+
+        user.is_active = not user.is_active
+        db.session.commit()
+
+        status = '激活' if user.is_active else '暂停'
+        return jsonify({'success': True, 'message': f'用户已{status}', 'is_active': user.is_active})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'操作失败：{str(e)}'}), 500
+
+@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
+@login_required
+def delete_user(user_id):
+    """删除用户"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': '需要管理员权限'}), 403
+
+    try:
+        user = User.query.get_or_404(user_id)
+
+        # 不能删除自己的账户
+        if user.id == current_user.id:
+            return jsonify({'success': False, 'message': '不能删除自己的账户'}), 400
+
+        # 不能删除其他管理员账户
+        if user.is_admin:
+            return jsonify({'success': False, 'message': '不能删除管理员账户'}), 400
+
+        # 删除用户（会级联删除相关的监控任务）
+        db.session.delete(user)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': '用户已删除'})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'message': f'删除失败：{str(e)}'}), 500
 
 # ---- 监控任务管理 ----
 @app.route('/create-task', methods=['POST'])

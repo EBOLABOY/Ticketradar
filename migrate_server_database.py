@@ -15,7 +15,7 @@ def backup_database(db_path):
     if not os.path.exists(db_path):
         print(f"❌ 数据库文件不存在: {db_path}")
         return None
-    
+
     backup_path = f"{db_path}.backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     shutil.copy2(db_path, backup_path)
     print(f"✅ 数据库已备份到: {backup_path}")
@@ -35,16 +35,16 @@ def check_column_exists(cursor, table_name, column_name):
 def migrate_database(db_path):
     """执行数据库迁移"""
     print(f"🔧 开始迁移数据库: {db_path}")
-    
+
     # 备份数据库
     backup_path = backup_database(db_path)
     if not backup_path:
         return False
-    
+
     try:
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
-        
+
         # 检查并创建monitor_tasks表
         if not check_table_exists(cursor, 'monitor_tasks'):
             print("➕ 创建monitor_tasks表...")
@@ -75,7 +75,7 @@ def migrate_database(db_path):
             print("✅ monitor_tasks表创建成功")
         else:
             print("✅ monitor_tasks表已存在")
-            
+
             # 检查并添加缺失的列
             missing_columns = []
             required_columns = [
@@ -86,11 +86,11 @@ def migrate_database(db_path):
                 ('total_checks', 'INTEGER DEFAULT 0'),
                 ('total_notifications', 'INTEGER DEFAULT 0')
             ]
-            
+
             for column_name, column_type in required_columns:
                 if not check_column_exists(cursor, 'monitor_tasks', column_name):
                     missing_columns.append((column_name, column_type))
-            
+
             if missing_columns:
                 print(f"➕ 添加缺失的列: {[col[0] for col in missing_columns]}")
                 for column_name, column_type in missing_columns:
@@ -98,7 +98,7 @@ def migrate_database(db_path):
                     print(f"   ✅ 添加列: {column_name}")
             else:
                 print("✅ monitor_tasks表结构完整")
-        
+
         # 检查并创建invitation_codes表
         if not check_table_exists(cursor, 'invitation_codes'):
             print("➕ 创建invitation_codes表...")
@@ -118,7 +118,7 @@ def migrate_database(db_path):
             print("✅ invitation_codes表创建成功")
         else:
             print("✅ invitation_codes表已存在")
-        
+
         # 检查users表是否需要添加新字段
         if check_table_exists(cursor, 'users'):
             user_columns = [
@@ -127,12 +127,12 @@ def migrate_database(db_path):
                 ('created_at', 'DATETIME DEFAULT CURRENT_TIMESTAMP'),
                 ('last_login', 'DATETIME')
             ]
-            
+
             missing_user_columns = []
             for column_name, column_type in user_columns:
                 if not check_column_exists(cursor, 'users', column_name):
                     missing_user_columns.append((column_name, column_type))
-            
+
             if missing_user_columns:
                 print(f"➕ 为users表添加缺失的列: {[col[0] for col in missing_user_columns]}")
                 for column_name, column_type in missing_user_columns:
@@ -140,15 +140,15 @@ def migrate_database(db_path):
                     print(f"   ✅ 添加列: {column_name}")
             else:
                 print("✅ users表结构完整")
-        
+
         # 提交更改
         conn.commit()
         conn.close()
-        
+
         print("🎉 数据库迁移完成！")
         print(f"📁 备份文件: {backup_path}")
         return True
-        
+
     except Exception as e:
         print(f"❌ 迁移失败: {e}")
         print(f"💡 可以从备份恢复: {backup_path}")
@@ -158,29 +158,40 @@ def main():
     """主函数"""
     print("🚀 Ticketradar 服务器数据库迁移工具")
     print("=" * 50)
-    
-    # 检查数据库文件
+
+    # 检查数据库文件（多个可能的位置）
     db_paths = [
         'ticketradar.db',
-        'instance/ticketradar.db'
+        'instance/ticketradar.db',
+        './ticketradar.db',
+        './instance/ticketradar.db',
+        '/app/ticketradar.db',
+        '/app/instance/ticketradar.db',
+        'data/ticketradar.db',
+        './data/ticketradar.db'
     ]
-    
+
     found_db = None
+    print("🔍 搜索数据库文件...")
     for db_path in db_paths:
+        print(f"   检查: {db_path} {'✅' if os.path.exists(db_path) else '❌'}")
         if os.path.exists(db_path):
             found_db = db_path
             break
-    
+
     if not found_db:
-        print("❌ 未找到数据库文件")
-        print("💡 请确保在正确的目录中运行此脚本")
+        print("\n❌ 未找到数据库文件")
+        print("💡 请手动指定数据库文件位置，或检查以下可能的位置:")
+        print("   - Docker容器内: docker-compose exec web ls -la /app/")
+        print("   - 当前目录: ls -la")
+        print("   - 查找所有.db文件: find . -name '*.db' -type f")
         return
-    
+
     print(f"📊 找到数据库: {found_db}")
-    
+
     # 执行迁移
     success = migrate_database(found_db)
-    
+
     if success:
         print("\n✅ 迁移成功！现在可以安全地更新代码了")
         print("💡 建议步骤:")

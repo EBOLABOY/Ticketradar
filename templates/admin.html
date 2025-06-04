@@ -118,6 +118,81 @@
             </div>
         </div>
 
+        <!-- 用户管理 -->
+        <div class="card mb-4">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-people"></i> 用户管理</h5>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>用户名</th>
+                                    <th>邮箱</th>
+                                    <th>状态</th>
+                                    <th>角色</th>
+                                    <th>注册时间</th>
+                                    <th>最后登录</th>
+                                    <th>监控任务</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr id="user-row-{{ user.id }}">
+                                    <td>{{ user.id }}</td>
+                                    <td>{{ user.username }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        {% if user.is_active %}
+                                            <span class="badge bg-success">正常</span>
+                                        {% else %}
+                                            <span class="badge bg-warning">暂停</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.is_admin %}
+                                            <span class="badge bg-danger">管理员</span>
+                                        {% else %}
+                                            <span class="badge bg-info">普通用户</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else '-' }}</td>
+                                    <td>{{ user.last_login.strftime('%Y-%m-%d %H:%M') if user.last_login else '从未登录' }}</td>
+                                    <td>{{ user.monitor_tasks|length }}</td>
+                                    <td>
+                                        {% if not user.is_admin and user.id != current_user.id %}
+                                            <button class="btn btn-sm btn-outline-warning me-1" onclick="toggleUser({{ user.id }})">
+                                                {% if user.is_active %}
+                                                    <i class="bi bi-pause-circle"></i> 暂停
+                                                {% else %}
+                                                    <i class="bi bi-play-circle"></i> 激活
+                                                {% endif %}
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteUser({{ user.id }}, '{{ user.username }}')">
+                                                <i class="bi bi-trash"></i> 删除
+                                            </button>
+                                        {% else %}
+                                            <span class="text-muted">-</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-people display-4 text-muted"></i>
+                        <p class="text-muted mt-2">暂无用户</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
         <!-- 邀请码管理 -->
         <div class="card">
             <div class="card-header bg-primary text-white">
@@ -260,9 +335,112 @@
 
         function deactivateCode(codeId) {
             if (confirm('确定要停用这个邀请码吗？')) {
-                // TODO: 实现停用功能
-                alert('停用功能开发中...');
+                fetch(`/admin/deactivate-invite/${codeId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        // 刷新页面以更新状态
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('操作失败，请重试', 'error');
+                });
             }
+        }
+
+        function toggleUser(userId) {
+            if (confirm('确定要切换这个用户的状态吗？')) {
+                fetch(`/admin/toggle-user/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        // 刷新页面以更新状态
+                        setTimeout(() => {
+                            location.reload();
+                        }, 1000);
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('操作失败，请重试', 'error');
+                });
+            }
+        }
+
+        function deleteUser(userId, username) {
+            if (confirm(`确定要删除用户 "${username}" 吗？此操作不可恢复，将同时删除该用户的所有监控任务。`)) {
+                fetch(`/admin/delete-user/${userId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        // 移除表格行
+                        const row = document.getElementById(`user-row-${userId}`);
+                        if (row) {
+                            row.remove();
+                        }
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('操作失败，请重试', 'error');
+                });
+            }
+        }
+
+        function showToast(message, type) {
+            const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+            const icon = type === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
+
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white ${bgClass} border-0 position-fixed top-0 end-0 m-3`;
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="bi ${icon}"></i> ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+
+            // 3秒后自动移除
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 3000);
         }
     </script>
 </body>

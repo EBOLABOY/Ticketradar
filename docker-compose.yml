@@ -36,8 +36,8 @@ services:
       - ticketradar
     networks:
       - ticketradar-network
-    profiles:
-      - nginx
+    # profiles:
+    #   - nginx
 
 volumes:
   ticketradar_data:
