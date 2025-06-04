@@ -492,13 +492,18 @@ def check_all_user_monitoring_tasks():
 
         # 查询所有活跃的监控任务（包含黑名单字段）
         # 用户监控任务不受全局ENABLE_PUSHPLUS设置影响，只要任务有PushPlus令牌就执行
+        # 同时检查用户状态，暂停的用户不执行监控任务
         cursor.execute('''
-            SELECT id, user_id, name, departure_city, destination_city,
-                   depart_date, return_date, price_threshold, pushplus_token,
-                   last_notification, total_checks, total_notifications,
-                   blacklist_cities, blacklist_countries
-            FROM monitor_tasks
-            WHERE is_active = 1 AND pushplus_token IS NOT NULL AND pushplus_token != ''
+            SELECT mt.id, mt.user_id, mt.name, mt.departure_city, mt.destination_city,
+                   mt.depart_date, mt.return_date, mt.price_threshold, mt.pushplus_token,
+                   mt.last_notification, mt.total_checks, mt.total_notifications,
+                   mt.blacklist_cities, mt.blacklist_countries
+            FROM monitor_tasks mt
+            JOIN users u ON mt.user_id = u.id
+            WHERE mt.is_active = 1
+              AND u.is_active = 1
+              AND mt.pushplus_token IS NOT NULL
+              AND mt.pushplus_token != ''
         ''')
 
         tasks = cursor.fetchall()
