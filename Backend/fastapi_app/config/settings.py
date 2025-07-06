@@ -5,10 +5,13 @@ FastAPI 应用配置设置
 """
 
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
-# 加载环境变量
-load_dotenv()
+# 加载根目录的环境变量文件
+project_root = Path(__file__).parent.parent.parent.parent
+env_path = project_root / ".env"
+load_dotenv(env_path)
 
 # 基本配置
 DEBUG = os.getenv("DEBUG", "True").lower() == "true"
@@ -112,3 +115,44 @@ def get_config_summary():
         "cache": "Redis" if REDIS_URL else "Memory",
         "email_verification": EMAIL_VERIFICATION_ENABLED
     }
+
+# 创建settings对象以便导入
+class Settings:
+    """配置设置类"""
+    def __init__(self):
+        # 基本配置
+        self.DEBUG = DEBUG
+        self.SECRET_KEY = SECRET_KEY
+        self.APP_NAME = APP_NAME
+        self.APP_VERSION = APP_VERSION
+
+        # 服务器配置
+        self.SERVER_HOST = SERVER_HOST
+        self.SERVER_PORT = SERVER_PORT
+
+        # 数据库配置
+        self.DATABASE_URL = DATABASE_URL
+        self.USE_SUPABASE = USE_SUPABASE
+        self.SUPABASE_URL = SUPABASE_URL
+        self.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY
+        self.SUPABASE_SERVICE_ROLE_KEY = SUPABASE_SERVICE_ROLE_KEY
+        self.SUPABASE_DATABASE_URL = SUPABASE_DATABASE_URL
+
+        # AI配置
+        self.GEMINI_API_KEY = GEMINI_API_KEY
+        self.GEMINI_MODEL = GEMINI_MODEL
+
+        # JWT配置
+        self.JWT_SECRET_KEY = JWT_SECRET_KEY
+        self.JWT_ALGORITHM = JWT_ALGORITHM
+        self.JWT_ACCESS_TOKEN_EXPIRE_MINUTES = JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+
+        # CORS配置
+        self.CORS_ORIGINS = CORS_ORIGINS
+
+        # 其他配置
+        self.EMAIL_VERIFICATION_ENABLED = EMAIL_VERIFICATION_ENABLED
+        self.REDIS_URL = REDIS_URL
+
+# 创建全局settings实例
+settings = Settings()

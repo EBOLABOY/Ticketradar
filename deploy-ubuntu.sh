@@ -84,14 +84,9 @@ prepare_env() {
 
     # 检查根目录环境文件
     if [ ! -f ".env" ]; then
-        log_warning "根目录 .env 文件不存在，将使用默认配置"
-        log_info "建议创建根目录 .env 文件以配置通用服务"
-    fi
-
-    # 检查后端环境文件
-    if [ ! -f "Backend/.env" ]; then
-        log_error "Backend/.env 文件不存在，请先配置环境变量"
-        log_info "请运行: cp Backend/.env.example Backend/.env"
+        log_error "根目录 .env 文件不存在，请先配置环境变量"
+        log_info "请运行: cp .env.example .env"
+        log_info "然后编辑 .env 文件，填入您的API密钥"
         exit 1
     fi
 
