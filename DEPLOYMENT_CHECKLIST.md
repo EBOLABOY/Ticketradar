@@ -46,9 +46,12 @@
 
 ### 3. 配置验证
 ```bash
-# 环境文件检查
-- [ ] cat Backend/.env | grep GEMINI_API_KEY
-- [ ] cat Backend/.env | grep SUPABASE_URL
+# 环境文件检查 - 双配置文件
+- [ ] ls -la .env  # 检查根目录配置文件
+- [ ] cat .env | grep AI_API_KEY  # 通用AI配置
+- [ ] cat .env | grep XHS_COOKIES  # 小红书配置
+- [ ] cat Backend/.env | grep GEMINI_API_KEY  # FastAPI专用配置
+- [ ] cat Backend/.env | grep SUPABASE_URL  # 数据库配置
 - [ ] cat Backend/.env | grep SUPABASE_ANON_KEY
 
 # Docker配置检查
