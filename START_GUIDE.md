@@ -47,7 +47,7 @@ stop-all.bat
 
 | 服务 | 地址 | 说明 |
 |------|------|------|
-| 前端 (React) | http://localhost:3000 | 用户界面 |
+| 前端 (React) | http://localhost:30000 | 用户界面 |
 | 后端 (FastAPI) | http://localhost:38181 | API服务 |
 | API文档 | http://localhost:38181/docs | API接口文档 |
 | 交互式文档 | http://localhost:38181/redoc | ReDoc格式文档 |

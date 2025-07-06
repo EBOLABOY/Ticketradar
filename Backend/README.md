@@ -167,7 +167,7 @@ python app.py
 
 ### CORS配置
 
-后端已配置CORS支持，允许前端（默认 `http://localhost:3000`）访问API。
+后端已配置CORS支持，允许前端（默认 `http://localhost:30000`）访问API。
 
 ### API认证
 

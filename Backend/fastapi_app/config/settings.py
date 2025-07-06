@@ -59,8 +59,8 @@ EMAIL_VERIFICATION_ENABLED = os.getenv("EMAIL_VERIFICATION_ENABLED", "false").lo
 
 # CORS 配置
 CORS_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
+    "http://localhost:30000",
+    "http://127.0.0.1:30000",
     "http://localhost:38181",
     "http://127.0.0.1:38181"
 ]

@@ -35,9 +35,9 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr :38181 2^>nul') do (
     )
 )
 
-:: Stop React service (port 3000)
+:: Stop React service (port 30000)
 echo [INFO] Stopping React frontend service...
-for /f "tokens=5" %%a in ('netstat -aon ^| findstr :3000 2^>nul') do (
+for /f "tokens=5" %%a in ('netstat -aon ^| findstr :30000 2^>nul') do (
     echo [INFO] Found React process: %%a
     taskkill /f /pid %%a >nul 2>&1
     if !errorlevel! equ 0 (

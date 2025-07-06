@@ -93,7 +93,7 @@ echo ========================================
 echo [SUCCESS] Development environment started!
 echo ========================================
 echo [DB] Supabase Database:    Connected (Cloud PostgreSQL)
-echo [FRONTEND] Application:    http://localhost:3000
+echo [FRONTEND] Application:    http://localhost:30000
 echo [BACKEND] API:             http://localhost:38181
 echo [DOCS] API Documentation:  http://localhost:38181/docs
 echo [DOCS] Interactive Docs:   http://localhost:38181/redoc
@@ -102,7 +102,7 @@ echo.
 
 :: Open browser
 echo [INFO] Opening browser...
-start http://localhost:3000
+start http://localhost:30000
 timeout /t 2 /nobreak >nul
 start http://localhost:38181/docs
 
@@ -115,7 +115,7 @@ echo   - Backend: FastAPI server with auto restart
 echo   - Close command windows to stop services
 echo.
 echo [LINKS] Quick access:
-echo   - Frontend App: http://localhost:3000
+echo   - Frontend App: http://localhost:30000
 echo   - API Docs:     http://localhost:38181/docs
 echo.
 echo [STOP] To stop all services, run: stop-all.bat
