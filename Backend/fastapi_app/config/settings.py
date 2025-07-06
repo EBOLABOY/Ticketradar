@@ -8,9 +8,9 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 加载根目录的环境变量文件
-project_root = Path(__file__).parent.parent.parent.parent
-env_path = project_root / ".env"
+# 加载Backend目录的环境变量文件
+backend_root = Path(__file__).parent.parent.parent
+env_path = backend_root / ".env"
 load_dotenv(env_path)
 
 # 基本配置

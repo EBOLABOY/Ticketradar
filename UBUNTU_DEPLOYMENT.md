@@ -99,21 +99,27 @@ docker-compose logs -f
 
 ### 环境变量配置
 
-项目使用统一的根目录 `.env` 文件配置，包含所有必要的环境变量：
+项目使用 `Backend/.env` 文件配置，包含所有必要的环境变量：
 
 ```env
+# ===== 应用基础配置 =====
+DEBUG=False
+SERVER_HOST=0.0.0.0
+SERVER_PORT=38181
+SECRET_KEY=your-secret-key-change-this
+
 # ===== AI服务配置 =====
+# Gemini AI服务配置（必填）
+GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.5-pro
+
 # 通用AI API配置
 AI_BASE_URL=http://154.19.184.12:3000/v1
 AI_MODEL=gemini-2.5-flash
 AI_API_KEY=your_ai_api_key
 
-# Gemini AI服务配置（FastAPI使用）
-GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-2.5-pro
-
 # ===== 数据库配置 =====
-# Supabase配置
+# Supabase配置（必填）
 SUPABASE_URL=your_supabase_url
 SUPABASE_ANON_KEY=your_supabase_anon_key
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_key
@@ -126,17 +132,11 @@ JWT_ALGORITHM=HS256
 JWT_ACCESS_TOKEN_EXPIRE_MINUTES=1440
 
 # ===== 其他服务配置 =====
-# 小红书配置
-XHS_COOKIES=your_xhs_cookies
-
 # 高德地图配置
 AMAP_API_KEY=your_amap_key
 
-# 应用基础配置
-SECRET_KEY=your-secret-key-change-this
-DEBUG=False
-SERVER_HOST=0.0.0.0
-SERVER_PORT=38181
+# 小红书配置（可选）
+XHS_COOKIES=your_xhs_cookies
 ```
 
 ### 域名配置（可选）

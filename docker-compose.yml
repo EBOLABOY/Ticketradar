@@ -31,11 +31,11 @@ services:
       - SERVER_HOST=0.0.0.0
       - SERVER_PORT=38181
     env_file:
-      - ./.env
+      - ./Backend/.env
     volumes:
       - ./Backend/instance:/app/instance
       - ./Backend/logs:/app/logs
-      - ./.env:/app/.env
+      - ./Backend/.env:/app/.env
     restart: unless-stopped
     networks:
       - flight-network
