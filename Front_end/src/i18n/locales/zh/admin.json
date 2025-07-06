@@ -1,0 +1,68 @@
+{
+  "title": "管理后台",
+  "subtitle": "系统管理和监控面板",
+  "tabs": {
+    "overview": "系统概览",
+    "inviteCodes": "邀请码管理",
+    "users": "用户管理",
+    "monitorSettings": "监控设置"
+  },
+  "stats": {
+    "totalUsers": "总用户数",
+    "activeUsers": "活跃用户",
+    "monitorTasks": "监控任务",
+    "todaySearches": "今日搜索"
+  },
+  "systemHealth": {
+    "title": "系统健康状态",
+    "status": "状态",
+    "uptime": "运行时间",
+    "memory": "内存使用",
+    "cpu": "CPU使用"
+  },
+  "quickActions": {
+    "title": "快捷操作",
+    "exportData": "导出数据",
+    "importConfig": "导入配置"
+  },
+  "inviteCodes": {
+    "title": "邀请码管理",
+    "create": "创建邀请码",
+    "code": "邀请码",
+    "description": "描述",
+    "maxUses": "最大使用次数",
+    "usedCount": "已使用次数",
+    "expiresAt": "过期时间",
+    "status": "状态",
+    "createDialog": {
+      "title": "创建邀请码",
+      "code": "邀请码",
+      "codePlaceholder": "留空自动生成",
+      "description": "描述",
+      "maxUses": "最大使用次数",
+      "expiresAt": "过期时间"
+    }
+  },
+  "users": {
+    "title": "用户管理",
+    "id": "用户ID",
+    "username": "用户名",
+    "email": "邮箱",
+    "status": "状态",
+    "registeredAt": "注册时间",
+    "lastLogin": "最后登录",
+    "neverLoggedIn": "从未登录",
+    "editFeatureComingSoon": "编辑功能开发中"
+  },
+  "monitorSettings": {
+    "flightSettings": "航班设置",
+    "notificationSettings": "通知设置",
+    "defaultRoundTrip": "默认往返程",
+    "defaultTimeRange": "默认时间范围",
+    "maxTasksPerUser": "每用户最大任务数",
+    "enableNotifications": "启用通知",
+    "enableEmailAlerts": "启用邮件提醒",
+    "searchInterval": "搜索间隔（分钟）",
+    "searchIntervalHelp": "系统自动检查价格变化的间隔时间"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "title": "Smart Flights",
+  "subtitle": "Find the best flight deals",
+  "searchPlaceholder": "Search flights...",
+  "explore": "Explore",
+  "nearbyAirports": "Nearby Airports",
+  "locationError": "Location information could not be retrieved",
+  "geolocationNotSupported": "Geolocation is not supported",
+  "findCheapFlights": "Find cheap flights from {{location}} to anywhere",
+  "popularRoutes": "Popular Routes",
+  "yourLocation": "Your Location",
+  "yourCurrentLocation": "Your Current Location",
+  "latitude": "Latitude",
+  "longitude": "Longitude"
+}

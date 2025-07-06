@@ -1,0 +1,185 @@
+/* Dashboard页面样式 - 参考Ticketradar设计 */
+
+/* 统计卡片动画效果 */
+.dashboard-stat-card {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+}
+
+.dashboard-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 监控任务卡片样式 */
+.monitor-task-card {
+  transition: all 0.3s ease;
+  border-radius: 12px !important;
+}
+
+.monitor-task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* 价格进度条样式 */
+.price-progress {
+  height: 8px !important;
+  border-radius: 4px !important;
+  background-color: #e9ecef !important;
+}
+
+.price-progress .MuiLinearProgress-bar {
+  border-radius: 4px !important;
+}
+
+/* 浮动按钮样式 */
+.dashboard-fab {
+  box-shadow: 0 8px 24px rgba(25, 118, 210, 0.3) !important;
+  transition: all 0.3s ease !important;
+}
+
+.dashboard-fab:hover {
+  transform: scale(1.1) !important;
+  box-shadow: 0 12px 32px rgba(25, 118, 210, 0.4) !important;
+}
+
+/* 对话框样式 */
+.task-dialog {
+  border-radius: 16px !important;
+}
+
+.task-dialog .MuiDialogTitle-root {
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border-bottom: 1px solid #e9ecef;
+}
+
+/* 空状态样式 */
+.empty-state {
+  background: linear-gradient(135deg, #f8f9fa, #ffffff);
+  border: 2px dashed #dee2e6;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.empty-state:hover {
+  border-color: #adb5bd;
+  background: linear-gradient(135deg, #ffffff, #f8f9fa);
+}
+
+/* 菜单样式 */
+.task-menu {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+.task-menu .MuiMenuItem-root {
+  border-radius: 8px;
+  margin: 4px 8px;
+  transition: all 0.2s ease;
+}
+
+.task-menu .MuiMenuItem-root:hover {
+  background-color: rgba(25, 118, 210, 0.08);
+  transform: translateX(4px);
+}
+
+/* 芯片样式 */
+.status-chip {
+  font-weight: 600 !important;
+  border-radius: 20px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 加载状态样式 */
+.loading-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* 通知样式 */
+.dashboard-snackbar .MuiAlert-root {
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+  .dashboard-stat-card {
+    margin-bottom: 16px;
+  }
+  
+  .monitor-task-card {
+    margin-bottom: 12px;
+  }
+  
+  .dashboard-fab {
+    bottom: 16px !important;
+    right: 16px !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .task-dialog {
+    margin: 8px !important;
+    max-height: calc(100vh - 16px) !important;
+  }
+  
+  .dashboard-stat-card .MuiCardContent-root {
+    padding: 16px !important;
+  }
+}
+
+/* 主题适配 */
+[data-theme="dark"] .empty-state {
+  background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
+  border-color: #404040;
+}
+
+[data-theme="dark"] .task-dialog .MuiDialogTitle-root {
+  background: linear-gradient(135deg, #1e1e1e, #2d2d2d);
+  border-bottom-color: #404040;
+}
+
+[data-theme="dark"] .task-menu .MuiMenuItem-root:hover {
+  background-color: rgba(144, 202, 249, 0.08);
+}
+
+/* 动画效果 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dashboard-card {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.dashboard-card:nth-child(1) { animation-delay: 0.1s; }
+.dashboard-card:nth-child(2) { animation-delay: 0.2s; }
+.dashboard-card:nth-child(3) { animation-delay: 0.3s; }
+.dashboard-card:nth-child(4) { animation-delay: 0.4s; }
+
+/* 滚动条样式 */
+.dashboard-container::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dashboard-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.dashboard-container::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.dashboard-container::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}

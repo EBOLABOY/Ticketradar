@@ -1,0 +1,156 @@
+/* 主题切换过渡效果 */
+
+/* 全局主题过渡 */
+[data-theme="light"],
+[data-theme="dark"] {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* 主题感知图片过渡效果 */
+.theme-aware-image {
+  transition: all 0.3s ease;
+}
+
+.theme-aware-image img {
+  transition: opacity 0.3s ease;
+}
+
+/* 主题切换时的淡入淡出效果 */
+.theme-transition-fade {
+  transition: opacity 0.3s ease;
+}
+
+.theme-transition-fade.changing {
+  opacity: 0.7;
+}
+
+/* 主题感知背景图片 */
+.theme-aware-background {
+  transition: background-image 0.3s ease;
+}
+
+/* 主题切换按钮动画 */
+.theme-toggle-button {
+  transition: all 0.3s ease;
+}
+
+.theme-toggle-button:hover {
+  transform: scale(1.1);
+}
+
+.theme-toggle-button.rotating {
+  animation: rotateTheme 0.5s ease-in-out;
+}
+
+@keyframes rotateTheme {
+  0% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* 主题切换时的页面过渡 */
+.page-theme-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 卡片和组件的主题过渡 */
+.theme-card {
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* 文本颜色过渡 */
+.theme-text {
+  transition: color 0.3s ease;
+}
+
+/* 边框颜色过渡 */
+.theme-border {
+  transition: border-color 0.3s ease;
+}
+
+/* 阴影过渡 */
+.theme-shadow {
+  transition: box-shadow 0.3s ease;
+}
+
+/* 主题切换时的图标动画 */
+.theme-icon {
+  transition: all 0.3s ease;
+}
+
+.theme-icon.sun {
+  animation: sunRise 0.5s ease-in-out;
+}
+
+.theme-icon.moon {
+  animation: moonRise 0.5s ease-in-out;
+}
+
+@keyframes sunRise {
+  0% {
+    transform: rotate(-90deg) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes moonRise {
+  0% {
+    transform: rotate(90deg) scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* 响应式主题图片 */
+@media (max-width: 768px) {
+  .theme-aware-image {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+/* 高对比度模式支持 */
+@media (prefers-contrast: high) {
+  .theme-aware-image {
+    filter: contrast(1.2);
+  }
+}
+
+/* 减少动画偏好支持 */
+@media (prefers-reduced-motion: reduce) {
+  .theme-aware-image,
+  .theme-transition-fade,
+  .theme-toggle-button,
+  .page-theme-transition,
+  .theme-card,
+  .theme-text,
+  .theme-border,
+  .theme-shadow,
+  .theme-icon {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* 深色主题特定样式 */
+[data-theme="dark"] .theme-aware-image {
+  filter: brightness(0.95);
+}
+
+/* 浅色主题特定样式 */
+[data-theme="light"] .theme-aware-image {
+  filter: brightness(1.05);
+}

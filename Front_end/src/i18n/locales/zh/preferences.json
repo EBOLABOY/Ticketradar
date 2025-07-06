@@ -1,0 +1,23 @@
+{
+  "aiAssistant": "🤖 AI智能助手",
+  "description": "告诉AI您的偏好，获得个性化的航班推荐",
+  "quickSelect": "快速选择",
+  "placeholder": "例如：我想要最便宜的航班，或者希望早上出发下午到达，不介意中转...",
+  "aiWillConsider": "AI将根据您的偏好智能推荐最合适的航班",
+  "aiSearch": "🤖 AI智能搜索",
+  
+  "cheapest": "💰 最便宜",
+  "cheapestText": "我想要最便宜的航班，价格是最重要的考虑因素",
+  
+  "direct": "✈️ 直飞",
+  "directText": "希望直飞航班，不要中转",
+  
+  "morning": "🌅 早班机",
+  "morningText": "希望早上出发，下午到达，不要红眼航班",
+  
+  "comfort": "🛋️ 舒适优先",
+  "comfortText": "舒适度很重要，可以接受稍高价格，希望选择大型航空公司",
+  
+  "flexible": "🔄 灵活安排",
+  "flexibleText": "时间比较灵活，对中转不介意，但希望中转时间合理"
+}

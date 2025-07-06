@@ -1,0 +1,37 @@
+{
+  "title": "个人设置",
+  "subtitle": "管理您的账户信息和偏好设置",
+  "profile": {
+    "title": "个人资料",
+    "username": "用户名",
+    "email": "邮箱地址",
+    "firstName": "名字",
+    "lastName": "姓氏"
+  },
+  "security": {
+    "title": "安全设置",
+    "changePassword": "修改密码",
+    "currentPassword": "当前密码",
+    "newPassword": "新密码",
+    "confirmPassword": "确认密码"
+  },
+  "notifications": {
+    "title": "通知设置",
+    "email": "邮件通知",
+    "push": "推送通知",
+    "priceAlerts": "价格提醒",
+    "weeklyDigest": "每周摘要"
+  },
+  "preferences": {
+    "title": "界面偏好",
+    "language": "语言设置",
+    "currentTheme": "当前主题",
+    "themeNote": "主题设置可在导航栏右上角切换"
+  },
+  "messages": {
+    "profileUpdated": "个人资料更新成功",
+    "passwordUpdated": "密码修改成功",
+    "updateFailed": "更新失败，请重试",
+    "passwordMismatch": "两次输入的密码不一致"
+  }
+}

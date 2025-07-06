@@ -1,0 +1,68 @@
+{
+  "title": "Admin Panel",
+  "subtitle": "System management and monitoring dashboard",
+  "tabs": {
+    "overview": "Overview",
+    "inviteCodes": "Invite Codes",
+    "users": "User Management",
+    "monitorSettings": "Monitor Settings"
+  },
+  "stats": {
+    "totalUsers": "Total Users",
+    "activeUsers": "Active Users",
+    "monitorTasks": "Monitor Tasks",
+    "todaySearches": "Today's Searches"
+  },
+  "systemHealth": {
+    "title": "System Health",
+    "status": "Status",
+    "uptime": "Uptime",
+    "memory": "Memory Usage",
+    "cpu": "CPU Usage"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "exportData": "Export Data",
+    "importConfig": "Import Config"
+  },
+  "inviteCodes": {
+    "title": "Invite Code Management",
+    "create": "Create Invite Code",
+    "code": "Code",
+    "description": "Description",
+    "maxUses": "Max Uses",
+    "usedCount": "Used Count",
+    "expiresAt": "Expires At",
+    "status": "Status",
+    "createDialog": {
+      "title": "Create Invite Code",
+      "code": "Invite Code",
+      "codePlaceholder": "Leave empty to auto-generate",
+      "description": "Description",
+      "maxUses": "Max Uses",
+      "expiresAt": "Expires At"
+    }
+  },
+  "users": {
+    "title": "User Management",
+    "id": "User ID",
+    "username": "Username",
+    "email": "Email",
+    "status": "Status",
+    "registeredAt": "Registered At",
+    "lastLogin": "Last Login",
+    "neverLoggedIn": "Never logged in",
+    "editFeatureComingSoon": "Edit feature coming soon"
+  },
+  "monitorSettings": {
+    "flightSettings": "Flight Settings",
+    "notificationSettings": "Notification Settings",
+    "defaultRoundTrip": "Default Round Trip",
+    "defaultTimeRange": "Default Time Range",
+    "maxTasksPerUser": "Max Tasks Per User",
+    "enableNotifications": "Enable Notifications",
+    "enableEmailAlerts": "Enable Email Alerts",
+    "searchInterval": "Search Interval (minutes)",
+    "searchIntervalHelp": "Interval for automatic price change checks"
+  }
+}

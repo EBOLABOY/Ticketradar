@@ -1,0 +1,17 @@
+{
+  "welcomeMessage": "Hello! I'm your AI travel assistant. I can help you plan itineraries, recommend attractions, find flights and hotels. Where would you like to travel?",
+  "quickQuestions": {
+    "japanItinerary": "Recommend 7-day Japan itinerary",
+    "hkTokyoFlights": "Find flights from Hong Kong to Tokyo",
+    "tokyoHotels": "Recommend Tokyo hotels",
+    "tokyoAttractions": "Must-visit Tokyo attractions",
+    "japaneseCuisine": "Japanese cuisine recommendations",
+    "europeTrip": "Europe trip with 30k budget"
+  },
+  "inputPlaceholder": "Enter your travel question...",
+  "sendButton": "Send",
+  "clearChat": "Clear Chat",
+  "typing": "Typing...",
+  "error": "Sorry, an error occurred. Please try again later.",
+  "networkError": "Network connection error. Please check your network and try again."
+}

@@ -1,0 +1,37 @@
+{
+  "title": "Settings",
+  "subtitle": "Manage your account information and preferences",
+  "profile": {
+    "title": "Profile",
+    "username": "Username",
+    "email": "Email Address",
+    "firstName": "First Name",
+    "lastName": "Last Name"
+  },
+  "security": {
+    "title": "Security",
+    "changePassword": "Change Password",
+    "currentPassword": "Current Password",
+    "newPassword": "New Password",
+    "confirmPassword": "Confirm Password"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "email": "Email Notifications",
+    "push": "Push Notifications",
+    "priceAlerts": "Price Alerts",
+    "weeklyDigest": "Weekly Digest"
+  },
+  "preferences": {
+    "title": "Preferences",
+    "language": "Language",
+    "currentTheme": "Current Theme",
+    "themeNote": "Theme can be changed in the top-right corner of the navigation bar"
+  },
+  "messages": {
+    "profileUpdated": "Profile updated successfully",
+    "passwordUpdated": "Password changed successfully",
+    "updateFailed": "Update failed, please try again",
+    "passwordMismatch": "Passwords do not match"
+  }
+}

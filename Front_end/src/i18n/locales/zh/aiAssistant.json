@@ -1,0 +1,17 @@
+{
+  "welcomeMessage": "您好！我是您的AI旅行助手。我可以帮您规划行程、推荐景点、查找航班和酒店。请告诉我您想去哪里旅行？",
+  "quickQuestions": {
+    "japanItinerary": "推荐日本7天行程",
+    "hkTokyoFlights": "查找香港到东京的航班",
+    "tokyoHotels": "推荐东京的酒店",
+    "tokyoAttractions": "东京必去景点",
+    "japaneseCuisine": "日本美食推荐",
+    "europeTrip": "预算3万的欧洲行程"
+  },
+  "inputPlaceholder": "输入您的旅行问题...",
+  "sendButton": "发送",
+  "clearChat": "清空对话",
+  "typing": "正在输入...",
+  "error": "抱歉，发生了错误，请稍后重试。",
+  "networkError": "网络连接错误，请检查网络后重试。"
+}

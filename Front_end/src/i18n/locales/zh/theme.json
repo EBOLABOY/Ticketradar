@@ -1,0 +1,8 @@
+{
+  "appearance": "外观",
+  "lightMode": "浅色模式",
+  "darkMode": "深色模式",
+  "switchToLight": "切换到浅色模式",
+  "switchToDark": "切换到深色模式",
+  "systemDefault": "跟随系统"
+}

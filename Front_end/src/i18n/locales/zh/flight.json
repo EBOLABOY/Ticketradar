@@ -1,0 +1,61 @@
+{
+  "price": "价格",
+  "duration": "飞行时间",
+  "stops": "中转",
+  "nonstop": "直飞",
+  "stop": "中转",
+  "stops_plural": "中转",
+  "airline": "航空公司",
+  "aircraft": "机型",
+  "departure": "出发",
+  "arrival": "到达",
+  "layover": "中转",
+  "bookNow": "立即预订",
+  "viewDetails": "查看详情",
+  "selectFlight": "选择航班",
+  "monitorPrice": "监控价格",
+  "hours": "小时",
+  "minutes": "分钟",
+  "emissions": "排放估算",
+  "legroom": "腿部空间较小",
+  "searchPrompt": "请搜索航班以查看结果",
+  "priceToBeChecked": "价格待查",
+  "hiddenCity": "隐藏城市",
+  "aiRecommended": "AI推荐",
+  "regularFlight": "常规航班",
+  "themes": "旅行主题",
+  "hotScore": "热度指数",
+  "priceDown": "价格下降",
+  "priceUp": "价格上涨",
+  "aiAnalysis": {
+    "tabs": {
+      "summary": "AI摘要",
+      "priceAnalysis": "价格分析",
+      "recommendedFlights": "推荐航班",
+      "travelTips": "旅行建议",
+      "rawData": "原始数据",
+      "section": "部分",
+      "overview": "概览",
+      "fullReport": "AI分析报告"
+    },
+    "summary": {
+      "userPreference": "用户偏好分析",
+      "bestValue": "最佳性价比推荐"
+    },
+    "price": {
+      "range": "价格范围",
+      "min": "最低价",
+      "max": "最高价",
+      "avg": "平均价"
+    },
+    "flights": {
+      "price": "价格",
+      "recommendationReason": "推荐理由",
+      "hiddenCityWarning": "这是一个隐藏城市航班，请仔细阅读相关说明。"
+    },
+    "errors": {
+      "parsingFailed": "解析AI分析报告失败。",
+      "noData": "没有可供显示的AI分析数据。"
+    }
+  }
+}

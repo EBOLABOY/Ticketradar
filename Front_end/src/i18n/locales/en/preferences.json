@@ -1,0 +1,23 @@
+{
+  "aiAssistant": "🤖 AI Smart Assistant",
+  "description": "Tell AI your preferences for personalized flight recommendations",
+  "quickSelect": "Quick Select",
+  "placeholder": "e.g., I want the cheapest flights, or prefer morning departure and afternoon arrival, don't mind layovers...",
+  "aiWillConsider": "AI will intelligently recommend the most suitable flights based on your preferences",
+  "aiSearch": "🤖 AI Smart Search",
+  
+  "cheapest": "💰 Cheapest",
+  "cheapestText": "I want the cheapest flights available, price is the most important factor",
+  
+  "direct": "✈️ Direct",
+  "directText": "I prefer direct flights with no layovers",
+  
+  "morning": "🌅 Morning",
+  "morningText": "I prefer morning departure and afternoon arrival, no red-eye flights",
+  
+  "comfort": "🛋️ Comfort",
+  "comfortText": "Comfort is important, willing to pay more, prefer major airlines",
+  
+  "flexible": "🔄 Flexible",
+  "flexibleText": "Flexible with timing, don't mind layovers if reasonable duration"
+}

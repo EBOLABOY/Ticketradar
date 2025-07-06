@@ -1,0 +1,15 @@
+{
+  "title": "智慧航班",
+  "subtitle": "寻找最优惠的机票",
+  "searchPlaceholder": "搜索航班...",
+  "explore": "探索",
+  "nearbyAirports": "附近机场",
+  "locationError": "无法获取位置信息",
+  "geolocationNotSupported": "不支持地理定位",
+  "findCheapFlights": "从{{location}}出发寻找便宜航班",
+  "popularRoutes": "热门航线",
+  "yourLocation": "您的位置",
+  "yourCurrentLocation": "您的当前位置",
+  "latitude": "纬度",
+  "longitude": "经度"
+}

@@ -1,0 +1,61 @@
+{
+  "price": "Price",
+  "duration": "Duration",
+  "stops": "Stops",
+  "nonstop": "Nonstop",
+  "stop": "stop",
+  "stops_plural": "stops",
+  "airline": "Airline",
+  "aircraft": "Aircraft",
+  "departure": "Departure",
+  "arrival": "Arrival",
+  "layover": "Layover",
+  "bookNow": "Book Now",
+  "viewDetails": "View Details",
+  "selectFlight": "Select Flight",
+  "monitorPrice": "Monitor Price",
+  "hours": "h",
+  "minutes": "m",
+  "emissions": "Emissions estimate",
+  "legroom": "Below average legroom",
+  "searchPrompt": "Please search for flights to see results",
+  "priceToBeChecked": "Price to be checked",
+  "hiddenCity": "Hidden City",
+  "aiRecommended": "AI Recommended",
+  "regularFlight": "Regular Flight",
+  "themes": "Travel Themes",
+  "hotScore": "Popularity",
+  "priceDown": "Price Drop",
+  "priceUp": "Price Rise",
+  "aiAnalysis": {
+    "tabs": {
+      "summary": "AI Summary",
+      "priceAnalysis": "Price Analysis",
+      "recommendedFlights": "Recommended Flights",
+      "travelTips": "Travel Tips",
+      "rawData": "Raw Data",
+      "section": "Section",
+      "overview": "Overview",
+      "fullReport": "AI Analysis Report"
+    },
+    "summary": {
+      "userPreference": "User Preference Analysis",
+      "bestValue": "Best Value Recommendation"
+    },
+    "price": {
+      "range": "Price Range",
+      "min": "Min Price",
+      "max": "Max Price",
+      "avg": "Avg Price"
+    },
+    "flights": {
+      "price": "Price",
+      "recommendationReason": "Recommendation Reason",
+      "hiddenCityWarning": "This is a hidden city flight. Please read the instructions carefully."
+    },
+    "errors": {
+      "parsingFailed": "Failed to parse AI analysis report.",
+      "noData": "No AI analysis data to display."
+    }
+  }
+}
