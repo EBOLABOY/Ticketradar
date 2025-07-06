@@ -154,5 +154,8 @@ class Settings:
         self.EMAIL_VERIFICATION_ENABLED = EMAIL_VERIFICATION_ENABLED
         self.REDIS_URL = REDIS_URL
 
+        # 信任的主机列表
+        self.TRUSTED_HOSTS = ["*"]  # 允许所有主机，生产环境应该限制
+
 # 创建全局settings实例
 settings = Settings()
