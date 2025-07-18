@@ -7,6 +7,11 @@ import {
   CircularProgress,
   Typography
 } from '@mui/material';
+import { Refresh as RefreshIcon } from '@mui/icons-material';
+
+// 移动端组件
+import { BottomNavigation, MobileAppBar } from '../components/Mobile';
+import { useMobile } from '../hooks/useMobile';
 
 // 导入子组件
 import DashboardHeader from '../components/Dashboard/DashboardHeader';
@@ -30,6 +35,7 @@ const Dashboard = () => {
   const { t } = useTranslation();
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const { isMobile } = useMobile();
 
   // 使用自定义Hooks管理状态
   const {
@@ -321,26 +327,42 @@ const Dashboard = () => {
   }
 
   return (
-    <Box
-      className="dashboard-container"
-      sx={{
-        minHeight: '100vh',
-        // 使用与主页相同的简洁白色背景
-        background: isDark
-          ? 'linear-gradient(135deg, #121212 0%, #1e1e1e 100%)'
-          : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-        // 添加微妙的背景纹理
-        backgroundAttachment: 'fixed',
-        position: 'relative',
-        py: 3,
-        // 添加非常微妙的背景装饰
-        '&::before': {
-          content: '""',
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+    <>
+      {/* 移动端应用栏 */}
+      {isMobile && (
+        <MobileAppBar
+          title={t('nav.dashboard')}
+          actions={[
+            {
+              icon: <RefreshIcon />,
+              onClick: refreshData
+            }
+          ]}
+        />
+      )}
+
+      <Box
+        className="dashboard-container"
+        sx={{
+          minHeight: '100vh',
+          // 使用与主页相同的简洁白色背景
+          background: isDark
+            ? 'linear-gradient(135deg, #121212 0%, #1e1e1e 100%)'
+            : 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
+          // 添加微妙的背景纹理
+          backgroundAttachment: 'fixed',
+          position: 'relative',
+          py: isMobile ? 1 : 3,
+          pt: isMobile ? 8 : 3, // 为移动端应用栏留空间
+          pb: isMobile ? 10 : 3, // 为移动端底部导航留空间
+          // 添加非常微妙的背景装饰
+          '&::before': {
+            content: '""',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
           background: isDark
             ? 'radial-gradient(circle at 20% 80%, rgba(66, 165, 245, 0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(144, 202, 249, 0.03) 0%, transparent 50%)'
             : 'radial-gradient(circle at 20% 80%, rgba(66, 165, 245, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(33, 150, 243, 0.05) 0%, transparent 50%)',
@@ -431,6 +453,15 @@ const Dashboard = () => {
         />
       </Container>
     </Box>
+
+    {/* 移动端底部导航 */}
+    {isMobile && (
+      <BottomNavigation
+        showFab={true}
+        fabAction={openCreateDialog}
+      />
+    )}
+  </>
   );
 };
 

@@ -8,16 +8,16 @@
     "@mui/icons-material": "^5.15.21",
     "@mui/material": "^5.15.21",
     "@mui/system": "^5.15.21",
-    "@mui/x-date-pickers": "^6.20.0",
+    "@mui/x-date-pickers": "^8.7.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "ajv": "^8.17.1",
     "axios": "^1.7.2",
     "dayjs": "^1.11.11",
-    "i18next": "^23.12.2",
+    "i18next": "^25.3.1",
     "i18next-browser-languagedetector": "^8.0.0",
-    "i18next-http-backend": "^2.5.2",
+    "i18next-http-backend": "^3.0.2",
     "leaflet": "^1.9.4",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -25,16 +25,18 @@
     "react-leaflet": "^4.2.1",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.24.1",
-    "react-scripts": "^5.0.1",
-    "react-toastify": "^10.0.5",
+    "react-toastify": "^11.0.5",
     "recharts": "^2.12.7",
-    "web-vitals": "^2.1.4"
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
+    "web-vitals": "^5.0.3"
   },
   "scripts": {
-    "start": "PORT=30000 react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build",
+    "serve": "vite preview",
+    "test": "echo \"test script not configured yet\""
   },
   "eslintConfig": {
     "extends": [
@@ -55,8 +57,9 @@
     ]
   },
   "devDependencies": {
-    "@babel/plugin-proposal-private-property-in-object": "^7.21.11",
+    "@vitejs/plugin-react": "^4.6.0",
     "cross-env": "^7.0.3",
-    "cypress": "^14.0.2"
+    "cypress": "^14.0.2",
+    "vite": "^6.3.5"
   }
 }

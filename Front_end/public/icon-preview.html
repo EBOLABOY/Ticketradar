@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>蓝色飞机图标预览 - Ticketradar</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        
+        .icon-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .icon-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .icon-display {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100px;
+        }
+        
+        .icon-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 10px;
+        }
+        
+        .icon-info {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        
+        .icon-path {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8em;
+            color: #495057;
+            word-break: break-all;
+        }
+        
+        .favicon-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .favicon-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .favicon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        .favicon-item {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .usage-section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .usage-title {
+            font-size: 1.5em;
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 20px;
+        }
+        
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        
+        .note {
+            background: #e3f2fd;
+            border-left: 4px solid #1a73e8;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        
+        .note-title {
+            font-weight: 600;
+            color: #1a73e8;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛩️ 蓝色飞机图标预览</h1>
+        <p class="subtitle">Ticketradar 项目图标文件预览和使用说明</p>
+        
+        <div class="icon-grid">
+            <div class="icon-card">
+                <div class="icon-display">
+                    <img src="favicon-16x16.svg" alt="16x16 图标" width="16" height="16" style="image-rendering: pixelated;">
+                    <span style="margin: 0 20px;">→</span>
+                    <img src="favicon-16x16.svg" alt="16x16 图标" width="32" height="32">
+                </div>
+                <div class="icon-title">Favicon 16x16</div>
+                <div class="icon-info">浏览器标签页小图标</div>
+                <div class="icon-path">favicon-16x16.svg</div>
+            </div>
+            
+            <div class="icon-card">
+                <div class="icon-display">
+                    <img src="favicon-32x32.svg" alt="32x32 图标" width="32" height="32">
+                    <span style="margin: 0 20px;">→</span>
+                    <img src="favicon-32x32.svg" alt="32x32 图标" width="48" height="48">
+                </div>
+                <div class="icon-title">Favicon 32x32</div>
+                <div class="icon-info">标准浏览器图标</div>
+                <div class="icon-path">favicon-32x32.svg</div>
+            </div>
+            
+            <div class="icon-card">
+                <div class="icon-display">
+                    <img src="favicon-64x64.svg" alt="64x64 图标" width="64" height="64">
+                </div>
+                <div class="icon-title">Favicon 64x64</div>
+                <div class="icon-info">高分辨率浏览器图标</div>
+                <div class="icon-path">favicon-64x64.svg</div>
+            </div>
+            
+            <div class="icon-card">
+                <div class="icon-display">
+                    <img src="logo192.svg" alt="192x192 图标" width="96" height="96">
+                </div>
+                <div class="icon-title">PWA Logo 192x192</div>
+                <div class="icon-info">PWA 应用图标（中等尺寸）</div>
+                <div class="icon-path">logo192.svg</div>
+            </div>
+            
+            <div class="icon-card">
+                <div class="icon-display">
+                    <img src="logo512.svg" alt="512x512 图标" width="128" height="128">
+                </div>
+                <div class="icon-title">PWA Logo 512x512</div>
+                <div class="icon-info">PWA 应用图标（大尺寸）</div>
+                <div class="icon-path">logo512.svg</div>
+            </div>
+            
+            <div class="icon-card">
+                <div class="icon-display">
+                    <img src="favicon.svg" alt="主要图标" width="64" height="64">
+                </div>
+                <div class="icon-title">主要 Favicon</div>
+                <div class="icon-info">现代浏览器 SVG 图标</div>
+                <div class="icon-path">favicon.svg</div>
+            </div>
+        </div>
+        
+        <div class="favicon-section">
+            <div class="favicon-title">📱 不同尺寸对比</div>
+            <div class="favicon-grid">
+                <div class="favicon-item">
+                    <img src="favicon-16x16.svg" alt="16x16" width="16" height="16">
+                    <div>16x16px</div>
+                </div>
+                <div class="favicon-item">
+                    <img src="favicon-32x32.svg" alt="32x32" width="32" height="32">
+                    <div>32x32px</div>
+                </div>
+                <div class="favicon-item">
+                    <img src="favicon-64x64.svg" alt="64x64" width="64" height="64">
+                    <div>64x64px</div>
+                </div>
+                <div class="favicon-item">
+                    <img src="logo192.svg" alt="192x192" width="96" height="96">
+                    <div>192x192px</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="usage-section">
+            <div class="usage-title">🔧 HTML 使用方法</div>
+            
+            <p>在 <code>index.html</code> 的 <code>&lt;head&gt;</code> 部分添加以下代码：</p>
+            
+            <div class="code-block">&lt;!-- 现代浏览器 SVG favicon --&gt;
+&lt;link rel="icon" type="image/svg+xml" href="/favicon.svg"&gt;
+
+&lt;!-- 传统浏览器 fallback --&gt;
+&lt;link rel="icon" type="image/x-icon" href="/favicon.ico"&gt;
+
+&lt;!-- 不同尺寸的 favicon --&gt;
+&lt;link rel="icon" type="image/svg+xml" sizes="16x16" href="/favicon-16x16.svg"&gt;
+&lt;link rel="icon" type="image/svg+xml" sizes="32x32" href="/favicon-32x32.svg"&gt;
+&lt;link rel="icon" type="image/svg+xml" sizes="64x64" href="/favicon-64x64.svg"&gt;
+
+&lt;!-- PWA 应用图标 --&gt;
+&lt;link rel="apple-touch-icon" href="/logo192.svg"&gt;
+&lt;link rel="manifest" href="/manifest.json"&gt;</div>
+            
+            <div class="note">
+                <div class="note-title">📝 注意事项</div>
+                <ul>
+                    <li>所有图标都使用 SVG 格式，确保在任何分辨率下都清晰显示</li>
+                    <li>图标采用蓝色主题，与 Ticketradar 品牌色彩一致</li>
+                    <li>SVG 格式支持现代浏览器，文件体积小，加载快</li>
+                    <li>如需 PNG 格式，可以使用在线工具将 SVG 转换为 PNG</li>
+                </ul>
+            </div>
+            
+            <div class="usage-title">🎨 图标设计说明</div>
+            <p>图标设计基于飞机主题，包含以下元素：</p>
+            <ul>
+                <li><strong>机头</strong>：使用 #1a73e8 蓝色，代表主要品牌色</li>
+                <li><strong>机身</strong>：同样使用主品牌色，保持一致性</li>
+                <li><strong>机翼</strong>：使用 #1565c0 深蓝色，增加层次感</li>
+                <li><strong>尾翼</strong>：使用 #0d47a1 更深的蓝色，突出细节</li>
+                <li><strong>高光效果</strong>：使用 #4285f4 亮蓝色，增加立体感</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

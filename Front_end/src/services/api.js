@@ -8,14 +8,14 @@ export const Api = axios.create({
   //url: "https://sky-scrapper.p.rapidapi.com/api/v1/getLocale",
   baseURL: "https://sky-scrapper.p.rapidapi.com/",
   headers: {
-    "x-rapidapi-key": process.env.REACT_APP_API_KEY,
+    "x-rapidapi-key": import.meta.env.VITE_API_KEY,
     "x-rapidapi-host": "sky-scrapper.p.rapidapi.com",
   },
 });
 
 export const getNearByAirports = async (position) => {
   // 修复安全问题：移除敏感信息的console.log输出
-  // console.log(process.env.REACT_APP_API_KEY);
+  
 
   const settings = getLocaleSettings();
   return await Api.get(

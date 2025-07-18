@@ -226,7 +226,7 @@ const MobileDrawer = ({ open, onClose }) => {
             {/* 公共菜单 */}
             {publicMenuItems.map((item) => (
               <ListItem key={item.text} disablePadding>
-                <ListItemButton 
+                <ListItemButton
                   onClick={() => handleNavigation(item.path)}
                   sx={createAppleMenuItem()}
                 >
@@ -238,17 +238,15 @@ const MobileDrawer = ({ open, onClose }) => {
 
             {isAuthenticated && (
               <>
-                <Divider sx={{ 
-                  my: 2, 
-                  mx: 2,
-                  borderColor: isDarkMode 
-                    ? 'rgba(255, 255, 255, 0.08)' 
-                    : 'rgba(0, 0, 0, 0.08)',
+                <Divider sx={{
+                  my: 2,
+                  borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'
                 }} />
+
                 {/* 认证用户菜单 */}
                 {authenticatedMenuItems.map((item) => (
                   <ListItem key={item.text} disablePadding>
-                    <ListItemButton 
+                    <ListItemButton
                       onClick={() => handleNavigation(item.path)}
                       sx={createAppleMenuItem()}
                     >
@@ -260,43 +258,30 @@ const MobileDrawer = ({ open, onClose }) => {
 
                 {/* 管理员菜单 */}
                 {isAdmin() && (
-                  <>
-                    <Divider sx={{ 
-                      my: 2, 
-                      mx: 2,
-                      borderColor: isDarkMode 
-                        ? 'rgba(255, 255, 255, 0.08)' 
-                        : 'rgba(0, 0, 0, 0.08)',
-                    }} />
-                    <ListItem disablePadding>
-                      <ListItemButton 
-                        onClick={() => handleNavigation('/admin')}
-                        sx={createAppleMenuItem()}
-                      >
-                        <ListItemIcon>
-                          <AdminPanelSettings />
-                        </ListItemIcon>
-                        <ListItemText primary={t('nav.admin')} />
-                      </ListItemButton>
-                    </ListItem>
-                  </>
+                  <ListItem disablePadding>
+                    <ListItemButton
+                      onClick={() => handleNavigation('/admin')}
+                      sx={createAppleMenuItem()}
+                    >
+                      <ListItemIcon><AdminPanelSettings /></ListItemIcon>
+                      <ListItemText primary={t('nav.admin')} />
+                    </ListItemButton>
+                  </ListItem>
                 )}
               </>
             )}
 
             {!isAuthenticated && (
               <>
-                <Divider sx={{ 
-                  my: 2, 
-                  mx: 2,
-                  borderColor: isDarkMode 
-                    ? 'rgba(255, 255, 255, 0.08)' 
-                    : 'rgba(0, 0, 0, 0.08)',
+                <Divider sx={{
+                  my: 2,
+                  borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'
                 }} />
+
                 {/* 未认证用户菜单 */}
                 {authMenuItems.map((item) => (
                   <ListItem key={item.text} disablePadding>
-                    <ListItemButton 
+                    <ListItemButton
                       onClick={() => handleNavigation(item.path)}
                       sx={createAppleMenuItem()}
                     >

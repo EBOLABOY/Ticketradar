@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 创建axios实例
 const backendApi = axios.create({
-  baseURL: process.env.REACT_APP_BACKEND_URL || 'http://localhost:38181',
+  baseURL: import.meta.env.VITE_BACKEND_URL || '',
   timeout: 300000, // 增加到300秒（5分钟），为AI分析预留更多时间
   headers: {
     'Content-Type': 'application/json',
@@ -117,6 +117,24 @@ export const flightApi = {
   // AI增强航班搜索 - 包含用户偏好处理和智能推荐（别名，保持兼容性）
   searchFlightsAIEnhanced: async (searchParams) => {
     const response = await backendApi.get('/api/flights/search/ai-enhanced', { params: searchParams });
+    return response.data;
+  },
+
+  // 异步AI增强航班搜索 - 提交任务
+  startAsyncAISearch: async (searchParams) => {
+    const response = await backendApi.post('/api/flights/search/ai-enhanced/async', null, { params: searchParams });
+    return response.data;
+  },
+
+  // 查询异步任务状态
+  getTaskStatus: async (taskId) => {
+    const response = await backendApi.get(`/api/flights/task/${taskId}/status`);
+    return response.data;
+  },
+
+  // 获取异步任务结果
+  getTaskResult: async (taskId) => {
+    const response = await backendApi.get(`/api/flights/task/${taskId}/result`);
     return response.data;
   },
 

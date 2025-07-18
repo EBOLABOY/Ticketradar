@@ -30,10 +30,21 @@ import { ErrorDialog } from "../../helper";
 import { getLocaleSettings, logCurrentSettings } from "../../utils/localeSettings";
 import { createAppleGlass, createGlassButton } from "../../utils/glassmorphism";
 import { useLoading } from "../../hooks/useLoading";
+import { useAsyncSearch } from "../../hooks/useAsyncSearch";
 
 const SearchBar = ({ isDarkMode }) => {
   const { t } = useTranslation();
   const { startLoading, stopLoading } = useLoading();
+  const {
+    isSearching: isAsyncSearching,
+    progress: searchProgress,
+    statusMessage,
+    error: searchError,
+    result: searchResult,
+    startAsyncSearch,
+    cancelSearch,
+    resetSearch
+  } = useAsyncSearch();
 
   const menuOptions = useMemo(
     () => [
@@ -228,13 +239,8 @@ const SearchBar = ({ isDarkMode }) => {
       return;
     }
 
-    const loadingSteps = [
-      t('loadingSteps.step1', '正在搜索航班...'),
-      t('loadingSteps.step2', '正在获取隐藏航班...'),
-      t('loadingSteps.step3', 'AI正在分析...'),
-      t('loadingSteps.step4', '正在整理...')
-    ];
-    startLoading(loadingSteps);
+    // 重置之前的异步搜索状态
+    resetSearch();
 
     try {
       // 检查用户是否已登录
@@ -271,20 +277,34 @@ const SearchBar = ({ isDarkMode }) => {
       console.log('🔍 搜索参数:', searchParams);
       console.log('🌍 语言环境:', localeSettings);
 
-      // 调用AI增强搜索API（默认使用AI处理）
-      const result = await flightApi.searchFlights(searchParams);
+      // 启动流程动画
+      const loadingSteps = [
+        t('loadingSteps.step1', '正在搜索航班...'),
+        t('loadingSteps.step2', '正在获取隐藏航班...'),
+        t('loadingSteps.step3', 'AI正在分析...'),
+        t('loadingSteps.step4', '正在整理...')
+      ];
+      startLoading(loadingSteps);
 
-      if (result.success) {
+      // 使用异步AI增强搜索
+      const asyncResult = await startAsyncSearch(searchParams);
+
+      if (asyncResult.success) {
+        // 导航到搜索结果页面，传递异步搜索的状态
         navigate("/flights", {
           state: {
-            flightData: result,  // 传递完整的result对象
-            searchInfo: result.search_info
+            isAsyncSearch: true,
+            taskId: asyncResult.taskId,
+            searchParams: searchParams
           }
         });
+
+        // 不要在导航后立即停止流程动画，让FlightsList页面来管理
+        // stopLoading();
       } else {
-        ErrorDialog(result.message || t('search.noResults'));
+        stopLoading();
+        ErrorDialog(asyncResult.error || t('search.noResults'));
       }
-      stopLoading();
     } catch (error) {
       stopLoading();
       // 处理认证错误
@@ -296,7 +316,7 @@ const SearchBar = ({ isDarkMode }) => {
         ErrorDialog(error.response?.data?.message || error.message || t('search.noResults'));
       }
     }
-  }, [navigate, selectFlight, isFormValid, t, selectedClass.key, selectedOption.key, userPreferences, startLoading, stopLoading]);
+  }, [navigate, selectFlight, isFormValid, t, selectedClass.key, selectedOption.key, userPreferences, startLoading, stopLoading, startAsyncSearch, resetSearch]);
 
   // 获取优化的玻璃效果样式 - 使用更透明的效果与背景融合
   const glassStyle = createAppleGlass('secondary', theme.palette.mode, {

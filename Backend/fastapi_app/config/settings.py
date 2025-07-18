@@ -65,7 +65,9 @@ CORS_ORIGINS = [
     "http://localhost:30000",
     "http://127.0.0.1:30000",
     "http://localhost:38181",
-    "http://127.0.0.1:38181"
+    "http://127.0.0.1:38181",
+    "https://ticketradar.izlx.de",
+    "http://ticketradar.izlx.de"
 ]
 
 # 受信任主机

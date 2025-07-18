@@ -1,5 +1,91 @@
 import { createTheme } from "@mui/material";
 
+// 移动端断点配置
+export const mobileBreakpoints = {
+  values: {
+    xs: 0,
+    sm: 600,
+    md: 768,
+    lg: 1024,
+    xl: 1280,
+    // 移动端特定断点
+    mobile: 480,
+    tablet: 768,
+    desktop: 1024,
+  },
+};
+
+// 移动端字体配置
+export const getMobileTypography = (isMobile = false) => ({
+  fontFamily: [
+    '"Google Sans Display"',
+    '"Roboto"',
+    '"Helvetica"',
+    '"Arial"',
+    'sans-serif'
+  ].join(','),
+  h1: {
+    fontWeight: 700,
+    fontSize: isMobile ? '2rem' : '2.5rem',
+    lineHeight: 1.2,
+    letterSpacing: '-0.02em',
+  },
+  h2: {
+    fontWeight: 600,
+    fontSize: isMobile ? '1.75rem' : '2rem',
+    lineHeight: 1.3,
+    letterSpacing: '-0.01em',
+  },
+  h3: {
+    fontWeight: 600,
+    fontSize: isMobile ? '1.375rem' : '1.5rem',
+    lineHeight: 1.4,
+  },
+  h4: {
+    fontWeight: 500,
+    fontSize: isMobile ? '1.125rem' : '1.25rem',
+    lineHeight: 1.4,
+  },
+  h5: {
+    fontWeight: 500,
+    fontSize: isMobile ? '1rem' : '1.125rem',
+    lineHeight: 1.4,
+  },
+  h6: {
+    fontWeight: 500,
+    fontSize: isMobile ? '0.875rem' : '1rem',
+    lineHeight: 1.4,
+  },
+  body1: {
+    fontSize: isMobile ? '14px' : '1rem', // 移动端使用px防止缩放
+    lineHeight: 1.6,
+    letterSpacing: '0.00938em',
+  },
+  body2: {
+    fontSize: isMobile ? '12px' : '0.875rem',
+    lineHeight: 1.5,
+    letterSpacing: '0.01071em',
+  },
+  button: {
+    fontWeight: 500,
+    fontSize: isMobile ? '14px' : '0.875rem',
+    textTransform: 'none',
+    letterSpacing: '0.02857em',
+  },
+  caption: {
+    fontSize: isMobile ? '11px' : '0.75rem',
+    lineHeight: 1.4,
+    letterSpacing: '0.03333em',
+  },
+  overline: {
+    fontSize: isMobile ? '11px' : '0.75rem',
+    fontWeight: 500,
+    lineHeight: 2.66,
+    letterSpacing: '0.08333em',
+    textTransform: 'uppercase',
+  },
+});
+
 // Apple风格动画缓动函数
 export const appleEasing = {
   // Apple标准缓动函数
@@ -83,6 +169,8 @@ export const createGlassEffect = (level = 'primary', mode = 'light') => {
 };
 
 export const lightTheme = createTheme({
+  breakpoints: mobileBreakpoints,
+  typography: getMobileTypography(),
   palette: {
     mode: "light",
     primary: {
@@ -156,6 +244,8 @@ export const lightTheme = createTheme({
 });
 
 export const darkTheme = createTheme({
+  breakpoints: mobileBreakpoints,
+  typography: getMobileTypography(),
   palette: {
     mode: "dark",
     primary: {

@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import {
   Alert,
   AlertTitle,
@@ -6,6 +6,7 @@ import {
   Container,
   Stack,
   Typography,
+  Paper,
 } from "@mui/material";
 import SearchBar from "../components/Home/SearchBar";
 import SimpleFlightCard from "../components/SimpleFlightCard";
@@ -18,6 +19,9 @@ import duration from "dayjs/plugin/duration";
 import { formatBackendPrice } from "../utils/priceFormatter";
 import { useTheme as useCustomTheme } from "../contexts/ThemeContext";
 import { createAppleGlass } from "../utils/glassmorphism";
+import { useAsyncSearch } from "../hooks/useAsyncSearch";
+import { useLoading } from "../hooks/useLoading";
+import { flightApi } from "../services/backendApi";
 
 dayjs.extend(duration);
 
@@ -30,26 +34,111 @@ dayjs.extend(duration);
 const FlightsList = () => {
   const { t } = useTranslation();
   const { isDarkMode } = useCustomTheme();
+  const { stopLoading } = useLoading();
   const [selectedFlight, setSelectedFlight] = useState(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [asyncFlightData, setAsyncFlightData] = useState(null);
 
   const location = useLocation();
   const flightData = location.state?.flightData;
+  const isAsyncSearch = location.state?.isAsyncSearch;
+  const taskId = location.state?.taskId;
+  const searchParams = location.state?.searchParams;
+
+  // 异步搜索Hook - 只保留错误处理需要的部分
+  const {
+    error: searchError,
+  } = useAsyncSearch();
+
+  // 处理异步搜索结果
+  useEffect(() => {
+    if (isAsyncSearch && taskId && !asyncFlightData) {
+      let delayTimeout;
+      let pollingInterval;
+
+      // 轮询任务状态的函数
+      const pollExistingTask = async () => {
+        try {
+          // 检查任务状态
+          const statusResponse = await flightApi.getTaskStatus(taskId);
+          if (statusResponse.success) {
+            const taskData = statusResponse.data;
+
+            if (taskData.status === 'COMPLETED') {
+              // 获取搜索结果
+              const resultResponse = await flightApi.getTaskResult(taskId);
+              if (resultResponse.success) {
+                setAsyncFlightData(resultResponse.data);
+                // 任务完成后停止流程动画
+                stopLoading();
+                // 任务完成后清理轮询
+                if (pollingInterval) {
+                  clearInterval(pollingInterval);
+                  pollingInterval = null;
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('检查任务状态失败:', error);
+        }
+      };
+
+      // 延迟80秒后开始轮询
+      delayTimeout = setTimeout(() => {
+        pollExistingTask();
+        pollingInterval = setInterval(pollExistingTask, 3000);
+      }, 80000);
+
+      // 清理函数
+      return () => {
+        if (delayTimeout) {
+          clearTimeout(delayTimeout);
+        }
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+        }
+      };
+    }
+  }, [isAsyncSearch, taskId, asyncFlightData]);
+
+  // 当异步搜索结果已经获取到时，确保停止所有轮询
+  useEffect(() => {
+    if (asyncFlightData && isAsyncSearch) {
+      console.log('✅ 异步搜索结果已获取，确保停止轮询');
+      // 这里可以添加额外的清理逻辑，确保没有遗留的轮询
+    }
+  }, [asyncFlightData, isAsyncSearch]);
+
+  // 监听搜索错误，在出现错误时停止流程动画
+  useEffect(() => {
+    if (searchError && isAsyncSearch) {
+      console.log('❌ 搜索出现错误，停止流程动画');
+      stopLoading();
+    }
+  }, [searchError, isAsyncSearch, stopLoading]);
+
+  // 确定使用哪个数据源
+  const currentFlightData = asyncFlightData || flightData;
 
   // 获取玻璃效果样式
   const glassStyle = createAppleGlass('secondary', isDarkMode ? 'dark' : 'light');
 
   // 获取航班数据并进行数据转换
-  const rawFlights = flightData?.data?.itineraries || [];
+  const rawFlights = currentFlightData?.data?.itineraries || [];
 
   // 获取AI分析报告
-  const aiAnalysisReport = flightData?.ai_analysis_report;
-  const processingInfo = flightData?.ai_processing?.processing_info;
+  const aiAnalysisReport = currentFlightData?.ai_analysis_report;
+  const processingInfo = currentFlightData?.ai_processing?.processing_info;
 
   // 强制调试AI报告提取
   console.log('🔍 AI报告提取调试:');
+  console.log('- isAsyncSearch:', isAsyncSearch);
+  console.log('- taskId:', taskId);
   console.log('- flightData存在:', !!flightData);
-  console.log('- ai_analysis_report字段:', flightData?.ai_analysis_report ? '存在' : '不存在');
+  console.log('- asyncFlightData存在:', !!asyncFlightData);
+  console.log('- currentFlightData存在:', !!currentFlightData);
+  console.log('- ai_analysis_report字段:', currentFlightData?.ai_analysis_report ? '存在' : '不存在');
   console.log('- aiAnalysisReport变量:', aiAnalysisReport ? '已提取' : '提取失败');
   console.log('- 报告长度:', aiAnalysisReport?.length || 0);
 
@@ -126,10 +215,18 @@ const FlightsList = () => {
       <SearchBar bg={"none"} />
 
       <Box sx={{ my: 4 }}>
+        {/* 异步搜索错误显示 */}
+        {isAsyncSearch && searchError && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            <AlertTitle>搜索失败</AlertTitle>
+            {searchError}
+          </Alert>
+        )}
+
         {/* AI分析报告 */}
-        {(aiAnalysisReport || flightData?.ai_analysis_report) && (
+        {(aiAnalysisReport || currentFlightData?.ai_analysis_report) && (
           <AIAnalysisReport
-            searchResult={flightData}
+            searchResult={currentFlightData}
           />
         )}
 

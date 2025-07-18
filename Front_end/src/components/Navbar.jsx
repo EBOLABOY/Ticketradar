@@ -14,6 +14,7 @@ import {
   MenuItem,
   ListItemIcon,
   ListItemText,
+  useMediaQuery,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import MenuIcon from "@mui/icons-material/Menu";
@@ -35,6 +36,8 @@ import LanguageSwitcher from "./LanguageSwitcher";
 import ThemeToggle from "./ThemeToggle";
 import { useTheme as useCustomTheme } from "../contexts/ThemeContext";
 import { createAppleGlass } from "../utils/glassmorphism";
+import { useMobile, useMobileNavigation } from "../hooks/useMobile";
+import { mobileStyles } from "../utils/mobileUtils";
 
 const Navbar = () => {
   const { isDarkMode, theme: themeMode } = useCustomTheme();
@@ -42,8 +45,20 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { user, isAuthenticated, logout, isAdmin } = useUser();
+
+  // 移动端相关状态和Hook
+  const { isMobile, isSmallScreen, performanceLevel } = useMobile();
+  const {
+    isDrawerOpen,
+    openDrawer,
+    closeDrawer
+  } = useMobileNavigation();
+
+  // 响应式断点检测
+  const isMobileBreakpoint = useMediaQuery(theme.breakpoints.down('md'));
+  const showMobileLayout = isMobile || isMobileBreakpoint || isSmallScreen;
+
   const [userMenuAnchor, setUserMenuAnchor] = useState(null);
-  const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
   const [appsMenuAnchor, setAppsMenuAnchor] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const [scrollY, setScrollY] = useState(0);
@@ -198,23 +213,29 @@ const Navbar = () => {
     return baseStyle;
   };
 
-  // 创建Apple风格图标按钮样式
-  const createAppleIconButton = () => ({
-    borderRadius: '8px',
-    padding: '8px',
-    transition: 'all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
-    color: isDarkMode ? '#e8eaed' : '#5f6368',
-    '&:hover': {
-      backgroundColor: isDarkMode 
-        ? 'rgba(138, 180, 248, 0.08)' 
-        : 'rgba(26, 115, 232, 0.08)',
-      color: isDarkMode ? '#8ab4f8' : '#1a73e8',
-      transform: 'translateY(-1px)',
-    },
-    '&:active': {
-      transform: 'translateY(0)',
-    }
-  });
+  // 创建Apple风格图标按钮样式（移动端优化）
+  const createAppleIconButton = () => {
+    const baseStyles = {
+      borderRadius: '8px',
+      padding: showMobileLayout ? '12px' : '8px',
+      minWidth: showMobileLayout ? '44px' : 'auto',
+      minHeight: showMobileLayout ? '44px' : 'auto',
+      transition: performanceLevel === 'low' ? 'none' : 'all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)',
+      color: isDarkMode ? '#e8eaed' : '#5f6368',
+      '&:hover': {
+        backgroundColor: isDarkMode
+          ? 'rgba(138, 180, 248, 0.08)'
+          : 'rgba(26, 115, 232, 0.08)',
+        color: isDarkMode ? '#8ab4f8' : '#1a73e8',
+        transform: performanceLevel === 'low' ? 'none' : 'translateY(-1px)',
+      },
+      '&:active': {
+        transform: showMobileLayout ? 'scale(0.95)' : 'translateY(0)',
+      }
+    };
+
+    return mobileStyles.getMobileStyles(baseStyles);
+  };
 
   // 创建Apple风格应用项样式
   const createAppleAppItem = () => ({
@@ -255,8 +276,17 @@ const Navbar = () => {
           "& .MuiToolbar-root": {
             backgroundColor: "transparent",
             width: "100%",
-            minHeight: '64px',
+            minHeight: showMobileLayout ? '56px' : '64px',
+            padding: showMobileLayout ? '0 16px' : '0 24px',
           },
+          // 移动端优化
+          ...(showMobileLayout && {
+            height: '56px',
+            '& .MuiToolbar-root': {
+              minHeight: '56px !important',
+              height: '56px',
+            }
+          })
         }}
       >
         <Toolbar sx={{ display: "flex", justifyContent: "space-between", px: { xs: 2, sm: 3 } }}>
@@ -265,7 +295,7 @@ const Navbar = () => {
               size="large"
               edge="start"
               aria-label="menu"
-              onClick={() => setMobileDrawerOpen(true)}
+              onClick={openDrawer}
               sx={{ 
                 display: { xs: 'block', md: 'none' },
                 ...createAppleIconButton()
@@ -704,8 +734,8 @@ const Navbar = () => {
 
       {/* 移动端抽屉 */}
       <MobileDrawer
-        open={mobileDrawerOpen}
-        onClose={() => setMobileDrawerOpen(false)}
+        open={isDrawerOpen}
+        onClose={closeDrawer}
       />
     </>
   );

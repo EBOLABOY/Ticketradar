@@ -27,6 +27,9 @@ const SharedTravelPlan = lazy(() => import("../pages/SharedTravelPlan"));
 const MyTravelPlans = lazy(() => import("../pages/MyTravelPlans"));
 const TravelPlanDetail = lazy(() => import("../pages/TravelPlanDetail"));
 
+// 移动端页面
+const MobileSearch = lazy(() => import("../pages/MobileSearch"));
+
 // 创建一个内部组件来使用useLocation
 const AppContent = () => {
   const location = useLocation();
@@ -44,6 +47,7 @@ const AppContent = () => {
         {/* 公开页面 */}
         <Route path="/" element={<Home />} />
         <Route path="/flights" element={<FlightsList />} />
+        <Route path="/search" element={<MobileSearch />} />
         <Route path="/flight-design-demo" element={<FlightDesignDemo />} />
         <Route path="/glass-demo" element={<GlassEffectDemo />} />
 

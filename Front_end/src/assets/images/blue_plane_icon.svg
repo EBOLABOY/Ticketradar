@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- 飞机主体 -->
+  <path d="M32 8L48 24L40 28L32 20L24 28L16 24L32 8Z" fill="#1a73e8"/>
+  
+  <!-- 飞机机身 -->
+  <path d="M32 20L38 32L32 48L26 32L32 20Z" fill="#1a73e8"/>
+  
+  <!-- 左翼 -->
+  <path d="M16 24L26 32L20 36L8 28L16 24Z" fill="#1565c0"/>
+  
+  <!-- 右翼 -->
+  <path d="M48 24L56 28L44 36L38 32L48 24Z" fill="#1565c0"/>
+  
+  <!-- 尾翼 -->
+  <path d="M26 32L32 48L38 32L34 40L30 40L26 32Z" fill="#0d47a1"/>
+  
+  <!-- 机头高光 -->
+  <path d="M32 8L40 16L32 20L24 16L32 8Z" fill="#4285f4" opacity="0.8"/>
+  
+  <!-- 机身中央线 -->
+  <path d="M32 20L32 48" stroke="#0d47a1" stroke-width="1" opacity="0.6"/>
+</svg>
